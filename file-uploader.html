@@ -2,7 +2,6 @@
 
 <!--
 `file-uploader`
-Element for multiple file upload
 
 @demo demo/index.html 
 -->
@@ -10,25 +9,96 @@ Element for multiple file upload
 <dom-module id="file-uploader">
   <template>
     <style>
+
       :host {
         display: block;
       }
+
+      #droparea {
+        height: 100%;
+        width: 100%;
+      }
+
     </style>
-    <h2>Hello [[prop1]]</h2>
+
+    <input id="fileInput"
+        type="file"
+        on-change="_inputChange"
+        multiple="[[multiple]]"
+        accept="[[accept]]"
+        hidden>
+
+    <div id="droparea">
+      <content></content>
+    </div>
+
   </template>
+</dom-module>
 
-  <script>
-    Polymer({
+<script>
+(function() {
+  'use strict';
 
-      is: 'file-uploader',
+  Polymer({
 
-      properties: {
-        prop1: {
-          type: String,
-          value: 'file-uploader',
-        },
+    is: 'file-uploader',
+
+    properties: {
+
+      autoUpload: {
+        type: Boolean,
+        value: false
       },
 
-    });
-  </script>
-</dom-module>
+      multiple: {
+        type: Boolean,
+        value: true
+      },
+
+      accept: {
+        type: String,
+        value: 'image/*'
+      },
+
+      drop: {
+        type: Boolean,
+        value: false
+      },
+
+      files: {
+        type: Array,
+        notify: true,
+        value: () => {
+          return [];
+        }
+      }
+
+    },
+
+    selectFile() {
+      this.$.fileInput.click();
+    },
+
+    uploadFile(file) {
+      if (!(file instanceof File)) {
+        throw new TypeError('the given file should be an instance of File');
+      }
+      // TODO: tengo que pensar mas todo esto...
+    },
+
+    _inputChange(event) {
+      const files = event.target.files;
+
+      for (let i = 0; i < files.length; i++) {
+        this.push('files', files[i]);
+
+        if (this.autoUpload) {
+          this.uploadFile(files[i]);
+        }
+      }
+    }
+
+  });
+
+}());
+</script>
