@@ -1,0 +1,34 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`file-uploader`
+Element for multiple file upload
+
+@demo demo/index.html 
+-->
+
+<dom-module id="file-uploader">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+    <h2>Hello [[prop1]]</h2>
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'file-uploader',
+
+      properties: {
+        prop1: {
+          type: String,
+          value: 'file-uploader',
+        },
+      },
+
+    });
+  </script>
+</dom-module>
