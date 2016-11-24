@@ -9,28 +9,19 @@
 <dom-module id="file-uploader">
   <template>
     <style>
-
       :host {
-        display: block;
+        display: none;
       }
-
-      #droparea {
-        height: 100%;
-        width: 100%;
-      }
-
     </style>
 
-    <input id="fileInput"
+    <input
+        id="fileInput"
         type="file"
         on-change="_inputChange"
-        multiple="[[multiple]]"
-        accept="[[accept]]"
+        multiple$="[[multiple]]"
+        accept$="[[accept]]"
+        disabled$="[[disabled]]"
         hidden>
-
-    <div id="droparea">
-      <content></content>
-    </div>
 
   </template>
 </dom-module>
@@ -45,11 +36,6 @@
 
     properties: {
 
-      autoUpload: {
-        type: Boolean,
-        value: false
-      },
-
       multiple: {
         type: Boolean,
         value: true
@@ -59,42 +45,24 @@
         type: String,
         value: 'image/*'
       },
-
-      drop: {
-        type: Boolean,
-        value: false
-      },
-
-      files: {
-        type: Array,
-        notify: true,
-        value: () => {
-          return [];
-        }
-      }
+  
+      disabled: Boolean
 
     },
 
-    selectFile() {
+    selectFiles() {
       this.$.fileInput.click();
-    },
-
-    uploadFile(file) {
-      if (!(file instanceof File)) {
-        throw new TypeError('the given file should be an instance of File');
-      }
-      // TODO: tengo que pensar mas todo esto...
     },
 
     _inputChange(event) {
       const files = event.target.files;
 
-      for (let i = 0; i < files.length; i++) {
-        this.push('files', files[i]);
+      this._uploadFiles(files);
+    },
 
-        if (this.autoUpload) {
-          this.uploadFile(files[i]);
-        }
+    _uploadFiles(files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
       }
     }
 
@@ -102,3 +70,8 @@
 
 }());
 </script>
+
+
+      <!--if (!(file instanceof File)) {
+        throw new TypeError('the given file should be an instance of File');
+      }-->
