@@ -62,18 +62,8 @@
       'files-selected': '_onFilesSelected',
     },
 
-    selectFiles() {
-      const event = new CustomEvent('click');
-      this.$.inputFile.dispatchEvent(event);
-    },
-
-    uploadFile(file, url) {
+    uploadFile(file) {
       this.filesProgress.set(file, 0);
-
-      // if () {
-
-      // }
-
       this._updateProgress();
     },
 

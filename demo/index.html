@@ -20,6 +20,16 @@
     <file-uploader id="fileUploader"></file-uploader>
     <file-uploader-progress></file-uploader-progress>
 
-    <button onclick="fileUploader.selectFiles()">Select files</button>
+    <input type="file" multiple onchange="onInputChange(event)">
+
+    <script>
+      const fileUploader = document.getElementById('fileUploader');
+
+      function onInputChange(event) {
+        const files = Array.from(event.target.files);
+
+        files.forEach(file => fileUploader.uploadFile(file));
+      }
+    </script>
   </body>
 </html>
