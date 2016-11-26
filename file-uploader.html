@@ -9,17 +9,12 @@
 
 <dom-module id="file-uploader">
   <template>
+
     <style>
       :host {
         display: none;
       }
     </style>
-
-    <input-file
-        id="inputFile"
-        on-files-selected="_onFilesSelected"
-        accept="[[accept]]"
-        hidden></input-file>
 
   </template>
 </dom-module>
@@ -33,20 +28,6 @@
     is: 'file-uploader',
 
     properties: {
-
-      multiple: {
-        type: Boolean,
-        value: true
-      },
-
-      accept: {
-        type: String,
-        value: 'image/*'
-      },
-
-      disabled: {
-        type: Boolean
-      },
 
       url: {
         type: String,
@@ -77,6 +58,10 @@
 
     },
 
+    listener: {
+      'files-selected': '_onFilesSelected',
+    },
+
     selectFiles() {
       const event = new CustomEvent('click');
       this.$.inputFile.dispatchEvent(event);
@@ -84,6 +69,11 @@
 
     uploadFile(file, url) {
       this.filesProgress.set(file, 0);
+
+      // if () {
+
+      // }
+
       this._updateProgress();
     },
 
@@ -104,8 +94,8 @@
     },
 
     _updateProgress() {
-      const completedFiles = this.files.find(detail => {
-        return detail.progress === 100;
+      const completedFiles = this.files.find(file => {
+        return this.filesProgress.get(file) === 100;
       }) || [];
       const progress = completedFiles.length / this.files.length;
       this.progress = Math.round(progress);
