@@ -3,7 +3,8 @@
   "description": "Element for multiple file upload",
   "main": "file-uploader.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.4.0"
+    "polymer": "Polymer/polymer#^1.4.0",
+    "input-file": "git@github.com:sharedlabs/input-file.git"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",

@@ -1,9 +1,10 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../input-file/input-file.html">
 
 <!--
 `file-uploader`
 
-@demo demo/index.html 
+@demo demo/index.html
 -->
 
 <dom-module id="file-uploader">
@@ -14,14 +15,11 @@
       }
     </style>
 
-    <input
-        id="fileInput"
-        type="file"
-        on-change="_inputChange"
-        multiple$="[[multiple]]"
-        accept$="[[accept]]"
-        disabled$="[[disabled]]"
-        hidden>
+    <input-file
+        id="inputFile"
+        on-files-selected="_onFilesSelected"
+        accept="[[accept]]"
+        hidden></input-file>
 
   </template>
 </dom-module>
@@ -45,33 +43,94 @@
         type: String,
         value: 'image/*'
       },
-  
-      disabled: Boolean
+
+      disabled: {
+        type: Boolean
+      },
+
+      url: {
+        type: String,
+      },
+
+      progress: {
+        type: Number
+      },
+
+      /**
+       * @type {Object[]} detail
+       * @property {File} detail[].file
+       * @property {number} detail[].progress
+       */
+      files: {
+        type: Array,
+        value: _ => [],
+        notify: true,
+        readOnly: true,
+      },
+
+      filesProgress: {
+        type: WeakMap,
+        value: _ => new WeakMap(),
+        notify: true,
+        readOnly: true,
+      },
 
     },
 
     selectFiles() {
-      this.$.fileInput.click();
+      const event = new CustomEvent('click');
+      this.$.inputFile.dispatchEvent(event);
     },
 
-    _inputChange(event) {
-      const files = event.target.files;
-
-      this._uploadFiles(files);
+    uploadFile(file, url) {
+      this.filesProgress.set(file, 0);
+      this._updateProgress();
     },
 
-    _uploadFiles(files) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+    _onFilesSelected(event) {
+      const files = event.detail.files;
+      event.preventDefault();
+
+      if (this.progress === 100) {
+        this._clearUpload();
       }
+
+      for (let file of files) {
+        if (!this._fileIsWaiting(file)) {
+          this.files.push(file);
+        }
+      }
+      this._updatePendingFiles();
+    },
+
+    _updateProgress() {
+      const completedFiles = this.files.find(detail => {
+        return detail.progress === 100;
+      }) || [];
+      const progress = completedFiles.length / this.files.length;
+      this.progress = Math.round(progress);
+    },
+
+    _updatePendingFiles() {
+      for (let file of this.files) {
+        if (this.filesProgress.get(file) === undefined) {
+          this.uploadFile(file, this.url);
+        }
+      }
+    },
+
+    _clearUpload() {
+      this.files.splice(0);
+      this.progress = null;
+    },
+
+    _fileIsWaiting(file) {
+      return this.files.find(f => {
+        return f.name === file.name && f.size === file.size;
+      });
     }
 
   });
 
 }());
 </script>
-
-
-      <!--if (!(file instanceof File)) {
-        throw new TypeError('the given file should be an instance of File');
-      }-->
