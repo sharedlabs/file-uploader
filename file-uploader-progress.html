@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../overlay-container/animated-overlay-behavior.html">
 
 <!--
 `file-uploader`
@@ -10,9 +11,15 @@
     <style>
       :host {
         display: inline-block;
+        width: 320px;
+        height: 100px;
+        background: white;
       }
     </style>
 
+    <template is="dom-repeat">
+
+    </template>
 
   </template>
 </dom-module>
@@ -23,7 +30,28 @@
 
   Polymer({
 
-    is: 'file-uploader-progress'
+    is: 'file-uploader-progress',
+
+    properties: {
+
+      // General upload progress
+      progress: {
+        type: Number
+      },
+
+      files: {
+        type: Array
+      },
+
+      filesProgress: {
+        type: Object
+      }
+
+    },
+
+    behaviors: [
+      AnimatedOverlayBehavior
+    ]
 
   });
 
