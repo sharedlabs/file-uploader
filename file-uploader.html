@@ -37,11 +37,6 @@
         type: Number
       },
 
-      /**
-       * @type {Object[]} detail
-       * @property {File} detail[].file
-       * @property {number} detail[].progress
-       */
       files: {
         type: Array,
         value: _ => [],
@@ -56,31 +51,40 @@
         readOnly: true,
       },
 
+      beforeUpload: {
+        type: Function,
+      }
+
     },
 
-    listener: {
-      'files-selected': '_onFilesSelected',
-    },
-
-    uploadFile(file) {
-      this.filesProgress.set(file, 0);
-      this._updateProgress();
-    },
-
-    _onFilesSelected(event) {
-      const files = event.detail.files;
-      event.preventDefault();
+    uploadFile(files) {
+      if (files.constructor.name === 'File') {
+        files = [files];
+      }
 
       if (this.progress === 100) {
         this._clearUpload();
       }
 
       for (let file of files) {
-        if (!this._fileIsWaiting(file)) {
+        if (!this._isFileAdded(file)) {
           this.files.push(file);
+          this.filesProgress.set(file, 0);
+
+          Promise.resolve().then(_ => {
+            if (typeof this.beforeUpload === 'function') {
+              return this.beforeUpload(file);
+            }
+          }).then(url => {
+            this._xhr({
+              url: url || this.url,
+              file
+            });
+          });
         }
       }
-      this._updatePendingFiles();
+
+      this._updateProgress();
     },
 
     _updateProgress() {
@@ -91,24 +95,37 @@
       this.progress = Math.round(progress);
     },
 
-    _updatePendingFiles() {
-      for (let file of this.files) {
-        if (this.filesProgress.get(file) === undefined) {
-          this.uploadFile(file, this.url);
-        }
-      }
-    },
-
     _clearUpload() {
       this.files.splice(0);
       this.progress = null;
     },
 
-    _fileIsWaiting(file) {
+    _isFileAdded(file) {
       return this.files.find(f => {
         return f.name === file.name && f.size === file.size;
       });
-    }
+    },
+
+    _xhr({url, contentType, file}) {
+      return new Promise((resolve, reject) => {
+        if (!url) {
+          return reject(new Error('no url'));
+        }
+
+        const xhr = new XMLHttpRequest();
+        xhr.addEventListener('load', event => {
+          resolve(event.currentTarget.response);
+        });
+        xhr.addEventListener('error', event => {
+          reject(event.currentTarget.response);
+        });
+        xhr.open('POST', url);
+        if (contentType) {
+          xhr.setRequestHeader('Content-type', contentType);
+        }
+        xhr.send(file);
+      });
+    },
 
   });
 

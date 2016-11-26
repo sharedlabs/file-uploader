@@ -25,6 +25,12 @@
     <script>
       const fileUploader = document.getElementById('fileUploader');
 
+      // fileUploader.beforeUpload = file => {
+      //   return new Promise((resolve, reject) => {
+      //     resolve('s3url')
+      //   });
+      // };
+
       function onInputChange(event) {
         const files = Array.from(event.target.files);
 
