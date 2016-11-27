@@ -34,7 +34,7 @@
         background: none;
         border-radius: 3px;
         border: none;
-        bottom: 12px;        
+        bottom: 12px;
         color: var(--file-uploader-progress-color, #2196f3);
         cursor: pointer;
         font-weight: 600;
@@ -92,7 +92,7 @@
         <div class="caption">Uploading to</div>
         <div class="uploading-to-text">[[uploadingToText]]</div>
         <div class="caption">[[_computeNthFileUploading(_currentFile)]] of [[files.length]]</div>
-        <button on-tap="_stopTapped">Stop<paper-ripple></paper-ripple></button>       
+        <button on-tap="_stopTapped">Stop<paper-ripple></paper-ripple></button>
         <div class="progress-bar-container">
           <div class="progress-bar" style$="[[_computeProgressBarStyle(progress)]]"></div>
         </div>
@@ -170,6 +170,7 @@
     },
 
     _progressChanged(progress) {
+      // console.log('_progressChanged', progress)
       if (progress === 100) {
         this.opened = false;
       } else {
@@ -202,6 +203,7 @@
       return (this.files || []).filter(file => {
         const progress = this.filesProgress.get(file);
         const isUploading = typeof progress === 'number' && progress < 100;
+        // console.log(file.name, progress)
         return isUploading;
       })[0];
     },
