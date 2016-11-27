@@ -32,14 +32,18 @@
 
     <input type="file" multiple onchange="onInputChange(event)">
 
+    <div id="error"></div>
+
     <script>
       const fileUploader = document.getElementById('fileUploader');
       const fileUploaderProgress = document.getElementById('fileUploaderProgress');
 
+      fileUploader.addEventListener('failure-changed', (event) => {
+        error.innerHTML = event.detail.value;
+      });
+
       // fileUploader.beforeUpload = file => {
-      //   return new Promise((resolve, reject) => {
-      //     resolve('s3url')
-      //   });
+      //   return Promise.resolve({url:'s3url'});
       // };
 
       function onInputChange(event) {

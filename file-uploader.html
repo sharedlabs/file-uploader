@@ -1,5 +1,4 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../input-file/input-file.html">
 
 <!--
 `file-uploader`
@@ -7,7 +6,7 @@
 @demo demo/index.html
 -->
 
-<dom-module id="file-uploader">
+<!-- <dom-module id="file-uploader">
   <template>
 
     <style>
@@ -18,7 +17,7 @@
 
   </template>
 </dom-module>
-
+ -->
 <script>
 (function() {
   'use strict';
@@ -33,8 +32,18 @@
         type: String,
       },
 
+      headers: {
+        type: Object,
+      },
+
+      beforeUpload: {
+        type: Function,
+      },
+
       progress: {
-        type: Number
+        type: Number,
+        notify: true,
+        readOnly: true,
       },
 
       files: {
@@ -51,9 +60,11 @@
         readOnly: true,
       },
 
-      beforeUpload: {
-        type: Function,
-      }
+      failure: {
+        type: String,
+        notify: true,
+        readOnly: true,
+      },
 
     },
 
@@ -66,25 +77,47 @@
         this._clearUpload();
       }
 
-      for (let file of files) {
+      for (const file of files) {
         if (!this._isFileAdded(file)) {
           this.files.push(file);
-          this.filesProgress.set(file, 0);
-
-          Promise.resolve().then(_ => {
-            if (typeof this.beforeUpload === 'function') {
-              return this.beforeUpload(file);
-            }
-          }).then(url => {
-            this._xhr({
-              url: url || this.url,
-              file
-            });
-          });
         }
       }
+      this.resumeUpload();
+    },
 
-      this._updateProgress();
+    resumeUpload() {
+      for (const file of this.files) {
+        if (typeof this.filesProgress.get(file) === 'number') {
+          continue;
+        }
+
+        Promise.resolve()
+          .then(this._beforeUpload.bind(this, file))
+          .then(this._xhr.bind(this))
+          .then(_ => {
+            this.filesProgress.set(file, 100);
+            this._updateProgress();
+          })
+          .catch(err => {
+            this.filesProgress.set(file, null);
+            this._setFailure(err && err.toString() ||
+              `Error uploading ${file.name}`);
+          });
+        this.filesProgress.set(file, 0);
+      }
+
+      this.async(_ => this._updateProgress());
+    },
+
+    _beforeUpload(file) {
+      if (typeof this.beforeUpload === 'function') {
+        return this.beforeUpload(file).then(config => {
+          config = config || {};
+          config.file = file;
+          return config;
+        });
+      }
+      return {file};
     },
 
     _updateProgress() {
@@ -92,12 +125,13 @@
         return this.filesProgress.get(file) === 100;
       }) || [];
       const progress = completedFiles.length / this.files.length;
-      this.progress = Math.round(progress);
+      this._setProgress(Math.round(progress));
     },
 
     _clearUpload() {
+      this._setFailure(null);
       this.files.splice(0);
-      this.progress = null;
+      this._setProgress(null);
     },
 
     _isFileAdded(file) {
@@ -106,22 +140,32 @@
       });
     },
 
-    _xhr({url, contentType, file}) {
+    _xhr({file, url=this.url, headers=this.headers}={}) {
       return new Promise((resolve, reject) => {
         if (!url) {
-          return reject(new Error('no url'));
+          return reject(new Error('No url'));
+        }
+        if (!file) {
+          return reject(new Error('No file'));
         }
 
         const xhr = new XMLHttpRequest();
-        xhr.addEventListener('load', event => {
-          resolve(event.currentTarget.response);
-        });
-        xhr.addEventListener('error', event => {
-          reject(event.currentTarget.response);
-        });
+        xhr.addEventListener('load', e => resolve(e.currentTarget.response));
+        xhr.addEventListener('error', e => reject(e.currentTarget.response));
         xhr.open('POST', url);
-        if (contentType) {
-          xhr.setRequestHeader('Content-type', contentType);
+
+        if (headers) {
+          const constructorName = headers.constructor.name;
+          if (constructorName === 'Headers') {
+            headers.forEach(xhr.setRequestHeader.bind(xhr));
+          } else if (constructorName === 'Object') {
+            Object.keys(headers).forEach(name => {
+              xhr.setRequestHeader(name, headers[name]);
+            });
+          } else {
+            return reject(
+              new Error('Invalid headers. Object or Header instance allowed'));
+          }
         }
         xhr.send(file);
       });
