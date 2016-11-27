@@ -68,8 +68,8 @@
 
     },
 
-    uploadFile(files) {
-      if (files.constructor.name === 'File') {
+    uploadFiles(files) {
+      if (files instanceof File) {
         files = [files];
       }
 
