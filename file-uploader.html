@@ -86,7 +86,7 @@
       /*
        * Last XMLHTTPRequest sent
        */
-      _xhr: {
+      _xhrObject: {
         type: Object,
       }
 
@@ -106,14 +106,14 @@
       }
 
       if (!this._isFileAdded(file)) {
-        this.files.push(file)
+        this.push('files', file);
         this.resumeUpload();
       }
     },
 
     cancelUpload() {
-      if (this._xhr) {
-        this._xhr.abort();
+      if (this._xhrObject) {
+        this._xhrObject.abort();
       }
       this.fire('upload-canceled', {files: this.files.slice(0)});
       this._clearUpload();
@@ -200,10 +200,10 @@
       if (this.files.length === 0) {
         this._setProgress(null);
       } else {
-        const completedFiles = this.files.find(file => {
+        const completedFiles = this.files.filter(file => {
           return this.filesProgress.get(file) === 100;
         }) || [];
-        const progress = completedFiles.length / this.files.length;
+        const progress = completedFiles.length * 100 / this.files.length;
         this._setProgress(Math.round(progress));
       }
       this.fire('progress-changed', this.progress);
@@ -250,7 +250,7 @@
         }
 
         xhr.send(file);
-        this._xhr = xhr;
+        this._xhrObject = xhr;
       });
     },
 

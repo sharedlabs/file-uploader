@@ -127,7 +127,7 @@
       // array of files
       files: {
         type: Array,
-        observer: '_filesChanged',
+        // observer: '_filesChanged',
       },
 
       // array of files progress weakmap
@@ -160,11 +160,12 @@
       AnimatedOverlayBehavior
     ],
 
-    // observers: [
-    //   '_filesChanged(files)'
-    // ],
+    observers: [
+      '_filesChanged(files.*)'
+    ],
 
-    _filesChanged(files) {
+    _filesChanged(change) {
+      const files = change.base;
       this.opened = files && files.length;
     },
 
@@ -181,7 +182,6 @@
         const isImage = /image\/.*/.exec(currentFile.type);
         if (isImage) {
           this._currentFileDataURL = URL.createObjectURL(currentFile);
-          console.log(currentFile.name)
         }
       }
     },
