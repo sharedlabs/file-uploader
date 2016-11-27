@@ -85,7 +85,7 @@
     </style>
 
     <div class="content">
-      <iron-image sizing="cover" src$="[[_currentFileThumbnailSrc]]"></iron-image>
+      <iron-image sizing="cover" src$="[[_currentFileDataURL]]"></iron-image>
 
       <div class="details">
         <div class="caption">Uploading to</div>
@@ -143,7 +143,7 @@
         observer: '_currentFileChanged'
       },
 
-      _currentFileThumbnailSrc: {
+      _currentFileDataURL: {
         type: String
       }
 
@@ -168,7 +168,7 @@
       const reader = new FileReader();
 
       reader.onloadend = _ => {
-        this._currentFileThumbnailSrc = reader.result;
+        this._currentFileDataURL = reader.result;
       };
 
       reader.readAsDataURL(currentFile);
