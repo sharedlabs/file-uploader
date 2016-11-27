@@ -91,7 +91,7 @@
       <div class="details">
         <div class="caption">Uploading to</div>
         <div class="uploading-to-text">[[uploadingToText]]</div>
-        <div class="caption">[[_computeCurrentFileIndex(_currentFile)]] of [[files.length]]</div>
+        <div class="caption">[[_computeNthFileUploading(_currentFile)]] of [[files.length]]</div>
         <button on-tap="_stopTapped">Stop<paper-ripple></paper-ripple></button>       
         <div class="progress-bar-container">
           <div class="progress-bar" style$="[[_computeProgressBarStyle(progress)]]"></div>
@@ -121,19 +121,20 @@
       // General upload progress
       progress: {
         type: Number,
-        value: 20
+        observer: '_progressChanged',
       },
 
       // array of files
       files: {
-        type: Array
+        type: Array,
+        observer: '_filesChanged',
       },
 
       // array of files progress weakmap
       filesProgress: {
-        type: Object
+        type: Object,
       },
-      
+
       uploadingToText: {
         type: String,
         value: 'My news widget'
@@ -150,7 +151,7 @@
       },
 
       _currentFileDataURL: {
-        type: String
+        type: String,
       }
 
     },
@@ -159,50 +160,56 @@
       AnimatedOverlayBehavior
     ],
 
-    observers: [
-      '_filesChanged(files)'
-    ],
+    // observers: [
+    //   '_filesChanged(files)'
+    // ],
 
     _filesChanged(files) {
-      this.opened = true;
+      this.opened = files && files.length;
+    },
 
-      // esto lo pongo aqui rapido.. mejor hacerlo cuando se suba de verdad
-      this._currentFile = files[0];
+    _progressChanged(progress) {
+      if (progress === 100) {
+        this.opened = false;
+      } else {
+        this._currentFile = this._getFileInProgress();
+      }
     },
 
     _currentFileChanged(currentFile) {
-      const reader = new FileReader();
-
-      var a = performance.now();
-      reader.onloadend = _ => {
-        this._currentFileDataURL = reader.result;
-        console.log(performance.now() - a);
-      };
-
-      reader.readAsDataURL(currentFile);
-    },
-
-    _computeCurrentFileIndex(currentFile) {
-      let index = 0;
-
-      for (let i = 0; i < this.files.length; i++) {
-        if (this.files[i] === currentFile) {
-          index = i;
-          break;
+      if (currentFile) {
+        const isImage = /image\/.*/.exec(currentFile.type);
+        if (isImage) {
+          this._currentFileDataURL = URL.createObjectURL(currentFile);
+          console.log(currentFile.name)
         }
       }
+    },
 
-      return index + 1;
+    _computeNthFileUploading(currentFile) {
+      return this._getUploadedFiles().length + 1;
     },
 
     _computeProgressBarStyle(progress) {
-      const scaleX = progress / 100;
-
-      return `transform: scaleX(${scaleX})`;
+      return `transform: scaleX(${progress / 100})`;
     },
 
     _stopTapped() {
+      this.fire('stop');
+    },
 
+    _getFileInProgress() {
+      return (this.files || []).filter(file => {
+        const progress = this.filesProgress.get(file);
+        const isUploading = typeof progress === 'number' && progress < 100;
+        return isUploading;
+      })[0];
+    },
+
+    _getUploadedFiles() {
+      return (this.files || []).filter(file => {
+        return this.filesProgress.get(file) === 100;
+      });
     }
 
   });

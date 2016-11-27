@@ -47,7 +47,7 @@
 
       progress: {
         type: Number,
-        notify: true,
+        // notify: true,
         readOnly: true,
       },
 
@@ -90,6 +90,14 @@
         type: Object,
       }
 
+    },
+
+    get filesInProgress() {
+      return this.files.filter(file => {
+        const progress = this.filesProgress.get(file);
+        const isUploading = typeof progress === 'number' && progress < 100;
+        return isUploading;
+      });
     },
 
     uploadFile(file) {
@@ -170,6 +178,7 @@
             throw err;
           });
       });
+
       this.filesProgress.set(file, 0);
       this.filesRequests.set(file, request);
       this._updateProgress();
@@ -189,20 +198,21 @@
 
     _updateProgress() {
       if (this.files.length === 0) {
-        return this._setProgress(null);
+        this._setProgress(null);
+      } else {
+        const completedFiles = this.files.find(file => {
+          return this.filesProgress.get(file) === 100;
+        }) || [];
+        const progress = completedFiles.length / this.files.length;
+        this._setProgress(Math.round(progress));
       }
-
-      const completedFiles = this.files.find(file => {
-        return this.filesProgress.get(file) === 100;
-      }) || [];
-      const progress = completedFiles.length / this.files.length;
-      this._setProgress(Math.round(progress));
+      this.fire('progress-changed', this.progress);
     },
 
     _clearUpload() {
       this.files.splice(0);
       this._setFailure(null);
-      this._setProgress(null);
+      this._updateProgress();
     },
 
     _isFileAdded(file) {
