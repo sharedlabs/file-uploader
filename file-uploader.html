@@ -97,11 +97,13 @@
           .then(_ => {
             this.filesProgress.set(file, 100);
             this._updateProgress();
+            this.fire('file-load', {file});
           })
           .catch(err => {
             this.filesProgress.set(file, null);
             this._setFailure(err && err.toString() ||
               `Error uploading ${file.name}`);
+            this.fire('file-error', {file});
           });
         this.filesProgress.set(file, 0);
       }
