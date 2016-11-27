@@ -1,4 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-image/iron-image.html">
 <link rel="import" href="../overlay-container/animated-overlay-behavior.html">
 
 <!--
@@ -7,19 +9,94 @@
 @demo demo/index.html
 -->
 <dom-module id="file-uploader-progress">
-  <template>
+  <template strip-whitespace>
     <style>
       :host {
-        display: inline-block;
-        width: 320px;
-        height: 100px;
         background: white;
+        border-radius: 4px;
+        box-shadow: 0px 3px 24px rgba(0,0,0,0.4);
+        display: inline-block;
+        height: 100px;
+        width: 320px;
+      }
+
+      .content {
+        @apply(--layout-horizontal);
+        height: 100%;
+      }
+
+      iron-image {
+        width: 100px;
+        height: 100%;
+      }
+
+      button {
+        background: none;
+        border-radius: 3px;
+        border: none;
+        bottom: 10px;        
+        color: var(--file-uploader-progress-color, #2196f3);
+        cursor: pointer;
+        font-weight: 600;
+        outline: 0;
+        padding: 6px 10px;
+        position: absolute;
+        right: 20px;
+        text-transform: uppercase;
+        @apply(--file-uploader-progress-button);
+      }
+
+      button:hover {
+        background: #f2f2f2;
+      }
+
+      .details {
+        @apply(--layout-vertical);
+        @apply(--layout-flex);
+        box-sizing: border-box;
+        padding: 12px 25px 16px;
+        position: relative;
+      }
+
+      .uploading-to-text {
+        @apply(--layout-flex);
+        margin: 2px 0;
+      }
+
+      .caption {
+        color: #666;
+        font-size: 13px;
+      }
+
+      .progress-bar-container {
+        height: 4px;
+        background: #ddd;
+        width: 100%;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+      }
+
+      .progress-bar {
+        height: 100%;
+        transform-origin: left top;
+        background: var(--file-uploader-progress-color, #2196f3);
       }
     </style>
 
-    <template is="dom-repeat">
+    <div class="content">
+      <iron-image sizing="cover" src$="[[_currentFileThumbnailSrc]]"></iron-image>
 
-    </template>
+      <div class="details">
+        <div class="caption">Uploading to</div>
+        <div class="uploading-to-text">[[uploadingToText]]</div>
+        <div class="caption">[[_computeCurrentFileIndex(_currentFile)]] of [[files.length]]</div>
+        <button on-tap="_stopTapped">Stop</button>       
+        <div class="progress-bar-container">
+          <div class="progress-bar" style$="[[_computeProgressBarStyle(progress)]]"></div>
+        </div>
+      </div>
+    </div>
 
   </template>
 </dom-module>
@@ -34,24 +111,91 @@
 
     properties: {
 
-      // General upload progress
-      progress: {
-        type: Number
+      // @override the OverlayBehavior property
+      noCancelOnEscKey: {
+        type: Boolean,
+        value: true
       },
 
+      // General upload progress
+      progress: {
+        type: Number,
+        value: 20
+      },
+
+      // array of files
       files: {
         type: Array
       },
 
+      // array of files progress weakmap
       filesProgress: {
         type: Object
+      },
+      
+      uploadingToText: {
+        type: String,
+        value: 'My news widget'
+      },
+
+      _currentFile: {
+        type: Object,
+        observer: '_currentFileChanged'
+      },
+
+      _currentFileThumbnailSrc: {
+        type: String
       }
 
     },
 
     behaviors: [
       AnimatedOverlayBehavior
-    ]
+    ],
+
+    observers: [
+      '_filesChanged(files)'
+    ],
+
+    _filesChanged(files) {
+      this.opened = true;
+
+      // esto lo pongo aqui rapido.. mejor hacerlo cuando se suba de verdad
+      this._currentFile = files[0];
+    },
+
+    _currentFileChanged(currentFile) {
+      const reader = new FileReader();
+
+      reader.onloadend = _ => {
+        this._currentFileThumbnailSrc = reader.result;
+      };
+
+      reader.readAsDataURL(currentFile);
+    },
+
+    _computeCurrentFileIndex(currentFile) {
+      let index = 0;
+
+      for (let i = 0; i < this.files.length; i++) {
+        if (this.files[i] === currentFile) {
+          index = i;
+          break;
+        }
+      }
+
+      return index + 1;
+    },
+
+    _computeProgressBarStyle(progress) {
+      const scaleX = progress / 100;
+
+      return `transform: scaleX(${scaleX})`;
+    },
+
+    _stopTapped() {
+
+    }
 
   });
 
