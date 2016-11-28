@@ -164,18 +164,21 @@
       '_filesChanged(files.*)'
     ],
 
+    refresh() {
+      if (this.progress === 100) {
+        this.opened = false;
+      } else {
+        this._currentFile = this._getFileInProgress();
+      }
+    },
+
     _filesChanged(change) {
       const files = change.base;
       this.opened = files && files.length;
     },
 
-    _progressChanged(progress) {
-      // console.log('_progressChanged', progress)
-      if (progress === 100) {
-        this.opened = false;
-      } else {
-        this._currentFile = this._getFileInProgress();
-      }
+    _progressChanged() {
+      this.refresh();
     },
 
     _currentFileChanged(currentFile) {
