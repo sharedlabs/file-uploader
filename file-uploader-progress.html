@@ -171,7 +171,7 @@
     ],
 
     refresh() {
-      if (this.progress === 100) {
+      if (this.progress === 100 || typeof this.progress !== 'number') {
         this.opened = false;
       } else {
         this._currentFile = this._getFileInProgress();

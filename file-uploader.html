@@ -115,8 +115,9 @@
       if (this._xhrObject) {
         this._xhrObject.abort();
       }
-      this.fire('upload-canceled', {files: this.files.slice(0)});
+      // this.splice('files', this.files.length);
       this._clearUpload();
+      this.fire('upload-canceled', {files: this.files});
     },
 
     stopUpload() {
