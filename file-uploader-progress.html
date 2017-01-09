@@ -2,6 +2,7 @@
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-image/iron-image.html">
 <link rel="import" href="../overlay-container/animated-overlay-behavior.html">
+<link rel="import" href="../paper-progress/paper-progress.html">
 
 <!--
 `file-uploader`
@@ -69,19 +70,13 @@
         font-size: 13px;
       }
 
-      .progress-bar-container {
-        height: 4px;
-        background: #ddd;
-        width: 100%;
-        position: absolute;
-        left: 0;
+      #paperProgress {
         bottom: 0;
-      }
-
-      .progress-bar {
-        height: 100%;
-        transform-origin: left top;
-        background: var(--file-uploader-progress-color, #2196f3);
+        height: 4px;
+        left: 0;
+        position: absolute;
+        width: 100%;        
+        --paper-progress-active-color: var(--file-uploader-progress-color, #2196f3);
       }
     </style>
 
@@ -89,13 +84,11 @@
       <iron-image sizing="cover" src$="[[_currentFileDataURL]]"></iron-image>
 
       <div class="details">
-        <div class="caption">Uploading to</div>
+        <div class="caption">Uploading...</div>
         <div class="uploading-to-text">[[uploadingToText]]</div>
-        <div class="caption">[[_computeNthFileUploading(_currentFile)]] of [[files.length]]</div>
+        <div class="caption">[[_computeCurrentUploadIndex(_currentFile)]] of [[files.length]]</div>
         <button on-tap="_stopTapped">Stop<paper-ripple></paper-ripple></button>
-        <div class="progress-bar-container">
-          <div class="progress-bar" style$="[[_computeProgressBarStyle(progress)]]"></div>
-        </div>
+        <paper-progress id="paperProgress" indeterminate></paper-progress>
       </div>
     </div>
 
@@ -112,6 +105,27 @@
 
     properties: {
 
+      // General upload progress
+      progress: {
+        type: Number,
+        notify: true,
+        observer: '_progressChanged',
+      },
+
+      // Array of files
+      files: {
+        type: Array
+      },
+
+      // Weakmap of files progress weakmap
+      filesProgress: {
+        type: Object,
+      },
+
+      uploadingToText: {
+        type: String,
+      },
+
       // @override the OverlayBehavior property
       noCancelOnEscKey: {
         type: Boolean,
@@ -122,28 +136,6 @@
       noCancelOnPopState: {
         type: Boolean,
         value: true
-      },
-
-      // General upload progress
-      progress: {
-        type: Number,
-        observer: '_progressChanged',
-      },
-
-      // array of files
-      files: {
-        type: Array,
-        // observer: '_filesChanged',
-      },
-
-      // array of files progress weakmap
-      filesProgress: {
-        type: Object,
-      },
-
-      uploadingToText: {
-        type: String,
-        value: 'My news widget'
       },
 
       /**
@@ -178,49 +170,50 @@
       }
     },
 
-    _filesChanged(change) {
-      const files = change.base;
-      this.opened = files && files.length;
-    },
-
     _progressChanged() {
       this.refresh();
+    },
+
+    _filesChanged() {
+      this.opened = this.files && this.files.length;
     },
 
     _currentFileChanged(currentFile) {
       if (currentFile) {
         const isImage = /image\/.*/.exec(currentFile.type);
+
         if (isImage) {
           this._currentFileDataURL = URL.createObjectURL(currentFile);
         }
       }
     },
 
-    _computeNthFileUploading(currentFile) {
-      return this._getUploadedFiles().length + 1;
-    },
-
-    _computeProgressBarStyle(progress) {
-      return `transform: scaleX(${progress / 100})`;
-    },
-
     _stopTapped() {
-      this.fire('stop');
+      this.fire('upload-stop');
     },
 
+    /**
+     * Return the file that is currently being uploaded.
+     */
     _getFileInProgress() {
       return (this.files || []).filter(file => {
         const progress = this.filesProgress.get(file);
         const isUploading = typeof progress === 'number' && progress < 100;
-        // console.log(file.name, progress)
         return isUploading;
       })[0];
     },
 
+    /**
+     * Return already uploaded files.
+     */
     _getUploadedFiles() {
       return (this.files || []).filter(file => {
         return this.filesProgress.get(file) === 100;
       });
+    },
+
+    _computeCurrentUploadIndex(currentFile) {
+      return this._getUploadedFiles().length + 1;
     }
 
   });
