@@ -174,9 +174,11 @@
           })
           .catch(err => {
             this.filesProgress.set(file, null);
+            this.files.splice(this.files.indexOf(file), 1);
+            this._updateProgress();
             this._setFailure(err && err.toString() ||
               `Error uploading ${file.name}`);
-            this.fire('upload-failed', {file});
+            this.fire('upload-failed', {file, error: this.failure});
             throw err;
           });
       });
@@ -233,7 +235,13 @@
         }
 
         const xhr = new XMLHttpRequest();
-        xhr.addEventListener('load', e => resolve({file, url}));
+        xhr.addEventListener('loadend', e => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve({file, url});
+          } else {
+            reject(xhr.statusText);
+          }
+        });
         xhr.addEventListener('error', e => reject(e.currentTarget.response));
         xhr.open(method, url, true);
 

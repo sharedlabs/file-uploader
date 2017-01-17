@@ -75,7 +75,7 @@
         height: 4px;
         left: 0;
         position: absolute;
-        width: 100%;        
+        width: 100%;
         --paper-progress-active-color: var(--file-uploader-progress-color, #2196f3);
       }
     </style>
@@ -168,6 +168,7 @@
       } else {
         this._currentFile = this._getFileInProgress();
       }
+      this._opened = this.opened;
     },
 
     _progressChanged() {
