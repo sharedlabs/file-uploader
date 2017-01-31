@@ -1,23 +1,12 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="file-uploader-progress-overlay.html">
+<link rel="import" href="file-uploader-completed-overlay.html">
 
 <!--
 `file-uploader`
 
 @demo demo/index.html
 -->
-
-<!-- <dom-module id="file-uploader">
-  <template>
-
-    <style>
-      :host {
-        display: none;
-      }
-    </style>
-
-  </template>
-</dom-module>
- -->
 <script>
 (function() {
   'use strict';
@@ -28,221 +17,156 @@
 
     properties: {
 
-      url: {
-        type: String,
+      // Files that are currently being uploaded
+      uploadingFiles: {
+        type: Array,
+        readOnly: true,
+        value: _ => []
       },
+
+      url: String,
 
       method: {
         type: String,
         value: 'POST',
       },
 
-      headers: {
-        type: Object,
-      },
+      headers: Object,
 
-      beforeUpload: {
-        type: Function,
-      },
-
-      progress: {
-        type: Number,
-        // notify: true,
-        readOnly: true,
-      },
-
-      files: {
-        type: Array,
-        value: _ => [],
-        notify: true,
-        readOnly: true,
-      },
-
-      filesProgress: {
-        type: WeakMap,
-        value: _ => new WeakMap(),
-        notify: true,
-        readOnly: true,
-      },
-
-      filesRequests: {
-        type: WeakMap,
-        value: _ => new WeakMap(),
-        notify: true,
-        readOnly: true,
-      },
-
-      failure: {
-        type: String,
-        notify: true,
-        readOnly: true,
-      },
-
-      _stopped: {
+      uploading: {
         type: Boolean,
-        value: false,
+        readOnly: true,
+        value: false
       },
 
-      /*
-       * Last XMLHTTPRequest sent
-       */
-      _xhrObject: {
-        type: Object,
+      // Current XMLHTTPRequest
+      _currentXHR: Object,
+
+      _filesUploadDetail: {
+        type: WeakMap,
+        value: _ => {
+          return new WeakMap();
+        }
       }
 
     },
 
-    get filesInProgress() {
-      return this.files.filter(file => {
-        const progress = this.filesProgress.get(file);
-        const isUploading = typeof progress === 'number' && progress < 100;
-        return isUploading;
-      });
-    },
+    /**
+     * Add a single file to the uploading queue.
+     * @param {!File}
+     */
+    addFile(file) {
+      if (!this._isFileOnQueue(file)) {
+        this.push('uploadingFiles', file);
 
-    uploadFile(file) {
-      if (this.progress === 100) {
-        this._clearUpload();
-      }
-
-      if (!this._isFileAdded(file)) {
-        this.push('files', file);
-        this.resumeUpload();
+        if (!this.uploading) {
+          this._uploadStart();
+        }
       }
     },
 
     cancelUpload() {
-      if (this._xhrObject) {
-        this._xhrObject.abort();
+      if (this.uploading) {
+        if (this._currentXHR) {
+          this._currentXHR.abort();
+        }
+        this._uploadEnd();
+        this.fire('file-upload-canceled', {files: this.uploadingFiles});
       }
-      // this.splice('files', this.files.length);
-      this._clearUpload();
-      this.fire('upload-canceled', {files: this.files});
     },
 
-    stopUpload() {
-      this._stopped = true;
-    },
-
-    resumeUpload() {
-      this._stopped = false;
-
-      for (const file of this.files) {
-        const progress = this.filesProgress.get(file);
-        const isUploading = typeof progress === 'number' && progress < 100;
-        const fileUploadFailed = progress === null;
-        const isUploaded = progress === 100;
-
-        if (isUploading) {
-          // Wait: Only one at a time
-          break;
-        // Ignore failed files.
-        } else if (!isUploaded && !fileUploadFailed) {
-          this._startFileUpload(file);
+    _resumeQueue() {
+      for (const file of this.uploadingFiles) {
+        if (!this._filesUploadDetail.get(file)) {
+          this._upload(file);
           break;
         }
       }
     },
-
-    retryFailedUploads() {
-      for (const file of this.files) {
-        const fileUploadFailed = this.filesProgress.get(file) === null;
-
-        if (fileUploadFailed) {
-          this.filesProgress.delete(file);
-        }
+    
+    _uploadStart() {
+      if (this.uploading) {
+        return;
       }
-      this.resumeUpload();
-    },
 
-    _startFileUpload(file) {
-      const request = Promise.resolve().then(_ => {
-        return this._beforeUpload(file)
-          .then(this._xhr.bind(this))
-          .then(response => {
-            const data = {file, url: response.url};
-            this.filesProgress.set(file, 100);
-            this._updateProgress();
-            this.fire('upload-finished', data);
+      this._setUploading(true);
+      this.fire('file-upload-start');
 
-            // Download next one
-            if (!this._stopped) {
-              this.resumeUpload();
-            }
-
-            return data;
-          })
-          .catch(err => {
-            this.filesProgress.set(file, null);
-            this.files.splice(this.files.indexOf(file), 1);
-            this._updateProgress();
-            this._setFailure(err && err.toString() ||
-              `Error uploading ${file.name}`);
-            this.fire('upload-failed', {file, error: this.failure});
-            throw err;
-          });
+      this._progressOverlay = this.create('file-uploader-progress', {
+        opened: true,
+        uploadingFiles: this.uploadingFiles,
+        filesUploadDetail: this._filesUploadDetail
       });
 
-      this.filesProgress.set(file, 0);
-      this.filesRequests.set(file, request);
-      this._updateProgress();
-      this.fire('upload-started', {request, file});
+      this._progressOverlay.addEventListener('request-cancel-upload', _ => {
+        this.cancelUpload();
+      });
+
+      this._resumeQueue();
     },
 
-    _beforeUpload(file) {
-      if (typeof this.beforeUpload === 'function') {
-        return this.beforeUpload(file).then(config => {
-          config = config || {};
-          config.file = file;
-          return config;
-        });
+    _upload(file) {
+      if (!this.uploading) {
+        return;
       }
-      return {file};
+
+      this._progressOverlay.currentFile = file;
+
+      this._xhr().then(response => {
+        const data = {file, url: response.url};
+
+        this._filesUploadDetail.set(file, {state: 'uploaded'});
+        this.fire('file-uploaded', data);
+        return data;
+      }).catch(error => {
+        this._filesUploadDetail.set(file, {state: 'failed'});
+        this.fire('file-upload-error', {file, error});
+        throw error;
+      }).then(_ => {
+        this._resumeQueue();
+      });
     },
 
-    _updateProgress() {
-      if (this.files.length === 0) {
-        this._setProgress(null);
-      } else {
-        const completedFiles = this.files.filter(file => {
-          return this.filesProgress.get(file) === 100;
-        }) || [];
-        const progress = completedFiles.length * 100 / this.files.length;
-        this._setProgress(Math.round(progress));
+    _uploadEnd() {
+      if (!this.uploading) {
+        return;
       }
-      this.fire('progress-changed', this.progress);
+
+      this.fire('file-upload-end');
+      this._progressOverlay.opened = false;
+      // this._progressOverlay is automatically removed when it's closed
+      this._progressOverlay = null;
+      this._filesUploadDetail = new WeakMap();
+      this.uploadingFiles([]);
+      this._setUploading(false);
     },
 
-    _clearUpload() {
-      this.files.splice(0);
-      this._setFailure(null);
-      this._updateProgress();
-    },
-
-    _isFileAdded(file) {
-      return this.files.find(f => {
+    _isFileOnQueue(file) {
+      return this.uploadingFiles.find(f => {
         return f.name === file.name && f.size === file.size;
       });
     },
 
-    _xhr({file, url=this.url, method=this.method, headers=this.headers}={}) {
+    _xhr({file, url = this.url, method = this.method, headers = this.headers} = {}) {
       return new Promise((resolve, reject) => {
         if (!url) {
-          return reject(new Error('No url'));
-        }
-        if (!file) {
-          return reject(new Error('No file'));
+          return reject(new Error('file-uploader requires an URL'));
         }
 
         const xhr = new XMLHttpRequest();
-        xhr.addEventListener('loadend', e => {
+
+        xhr.addEventListener('loadend', _ => {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve({file, url});
           } else {
             reject(xhr.statusText);
           }
         });
-        xhr.addEventListener('error', e => reject(e.currentTarget.response));
+
+        xhr.addEventListener('error', event => {
+          reject(event.currentTarget.response);
+        });
+
         xhr.open(method, url, true);
 
         if (headers) {
@@ -260,7 +184,7 @@
         }
 
         xhr.send(file);
-        this._xhrObject = xhr;
+        this._currentXHR = xhr;
       });
     },
 

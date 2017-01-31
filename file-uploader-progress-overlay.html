@@ -1,0 +1,199 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../overlay-container/animated-overlay-behavior.html">
+<link rel="import" href="../paper-progress/paper-progress.html">
+
+<!--
+`file-uploader-progress-overlay`
+
+@demo demo/index.html
+-->
+<dom-module id="file-uploader-progress-overlay">
+  <template>
+    <style>
+      :host {
+        background: white;
+        border-radius: 4px;
+        bottom: 20px;
+        box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.2);
+        display: inline-block;
+        height: 100px;
+        left: 20px;
+        overflow: hidden;
+        position: fixed;
+        right: 20px;
+      }
+
+      @media(min-width: 642px) {
+        :host {
+          bottom: 30px;
+          left: 30px;
+          right: auto;
+          width: 320px;
+        }
+      }
+
+      #paperProgress {
+        bottom: 0;
+        height: 4px;
+        left: 0;
+        position: absolute;
+        width: 100%;
+        --paper-progress-active-color: var(--file-uploader-progress-overlay-color, #2196f3);
+      }
+
+      #container {
+        @apply(--layout-horizontal);
+        height: 100%;
+      }
+
+      iron-image {
+        width: 100px;
+        height: 100%;
+      }
+
+      .detail {
+        @apply(--layout-vertical);
+        @apply(--layout-flex);
+        box-sizing: border-box;
+        color: #666;
+        font-size: 13px;
+        padding: 12px 25px 16px;
+        position: relative;
+      }
+
+      .detail__destination {
+        @apply(--layout-flex);
+        color: initial;
+        font-size: 16px;
+        margin: 2px 0;
+      }
+
+      .detail__button {
+        background: none;
+        border-radius: 3px;
+        border: none;
+        bottom: 12px;
+        color: var(--file-uploader-progress-overlay-color, #2196f3);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        outline: 0;
+        padding: 6px 10px;
+        position: absolute;
+        right: 20px;
+        text-transform: uppercase;
+      }
+
+      .detail__button:hover {
+        background: #f2f2f2;
+      }
+
+    </style>
+
+    <div id="container">
+      <iron-image sizing="cover" src$="[[_computeThumbnail(currentFile)]]"></iron-image>
+
+      <div class="detail">
+        <div>[[_computeUploadingTitle(destinationText, localize)]]</div>
+        <div class="detail__destination">[[destinationText]]</div>
+        <div>[[_computeLoadedDetail(currentFile, uploadingFiles.length, localize)]]</div>
+        <button class="detail__button" on-tap="_stopTapped">[[localize('stop')]]</button>
+        <paper-progress id="paperProgress" indeterminate></paper-progress>
+      </div>
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+(function() {
+  'use strict';
+
+  Polymer({
+
+    is: 'file-uploader-progress-overlay',
+
+    properties: {
+
+      // @override the OverlayBehavior property
+      noCancelOnEscKey: {
+        type: Boolean,
+        value: true
+      },
+
+      // @override the OverlayBehavior property
+      noCancelOnPopState: {
+        type: Boolean,
+        value: true
+      },
+
+      uploadingFiles: Array,
+
+      // The file that is being currently uploaded.
+      currentFile: Object,
+
+      destinationText: String,
+
+      language: {
+        type: String,
+        value: 'en'
+      },
+
+      // localize resources
+      resources: {
+        value: _ => {
+          return {
+            'en': {
+              'UploadingTo': 'Uploading to',
+              'Uploading': 'Uploading...',
+              'LoadedDetail': '{current} of {total}',
+              'stop': 'Stop'
+            },
+            'es': {
+              'UploadingTo': 'Subiendo a',
+              'Uploading': 'Subiendo...',
+              'LoadedDetail': '{current} de {total}',
+              'stop': 'Detener'
+            }
+          };
+        }
+      }
+
+    },
+
+    behaviors: [
+      AnimatedOverlayBehavior,
+      Polymer.AppLocalizeBehavior
+    ],
+
+    _computeThumbnail(currentFile) {
+      if (currentFile) {
+        const isImage = /image\/.*/.exec(currentFile.type);
+
+        if (isImage) {
+          return URL.createObjectURL(currentFile);
+        }
+      }
+    },
+
+    _computeUploadingTitle(destinationText) {
+      if (destinationText) {
+        return this.localize('UploadingTo');
+      }
+      return this.localize('Uploading');
+    },
+
+    _computeLoadedDetail(currentFile, uploadingFilesLength) {
+      return this.localize('LoadedDetail',
+        'current', this.uploadingFiles.indexOf(currentFile) + 1,
+        'total', uploadingFilesLength);
+    }
+
+
+  });
+
+}());
+</script>

@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="../file-uploader.html">
-    <link rel="import" href="../file-uploader-progress.html">
 
     <style is="custom-style">
       body {
@@ -28,35 +27,13 @@
   <body>
 
     <file-uploader id="fileUploader"></file-uploader>
-    <file-uploader-progress id="fileUploaderProgress"></file-uploader-progress>
-
     <input type="file" multiple onchange="onInputChange(event)">
 
     <script>
-      const fileUploader = document.getElementById('fileUploader');
-      const fileUploaderProgress = document.getElementById('fileUploaderProgress');
-
       function onInputChange(event) {
+        const fileUploader = document.getElementById('fileUploader');
         const files = event.target.files;
-        const filesProgress = new WeakMap();
-        let i = 1000;
-        let completed = 0;
-
-        fileUploaderProgress.filesProgress = filesProgress;
-        fileUploaderProgress.files = [...files];
-
-        for (const file of files) {
-          filesProgress.set(file, 0);
-          fileUploaderProgress.progress = 0;
-
-          setTimeout(_ => {
-            completed ++;
-            filesProgress.set(file, 100);
-            fileUploaderProgress.progress = completed * 100 / files.length;
-          }, i);
-
-          i += 1000;
-        }
+        fileUploader.addFile(files);
       }
     </script>
   </body>

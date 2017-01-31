@@ -1,0 +1,63 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../overlay-container/animated-overlay-behavior.html">
+<link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+
+<!--
+`file-uploader-completed-overlay`
+
+@demo demo/index.html
+-->
+<dom-module id="file-uploader-completed-overlay">
+  <template>
+    <style>
+      :host {
+        background: white;
+        border-radius: 4px;
+        bottom: 20px;
+        box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.2);
+        display: inline-block;
+        left: 20px;
+        min-height: 100px;
+        overflow: hidden;
+        position: fixed;
+        right: 20px;
+      }
+
+      @media(min-width: 642px) {
+        :host {
+          bottom: 30px;
+          left: 30px;
+          right: auto;
+          width: 320px;
+        }
+      }
+
+    </style>
+
+    <div id="container">
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+(function() {
+  'use strict';
+
+  Polymer({
+
+    is: 'file-uploader-completed-overlay',
+
+    properties: {
+    },
+
+    behaviors: [
+      AnimatedOverlayBehavior,
+      Polymer.AppLocalizeBehavior
+    ]
+
+  });
+
+}());
+</script>
