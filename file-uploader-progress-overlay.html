@@ -169,6 +169,10 @@
       Polymer.AppLocalizeBehavior
     ],
 
+    _stopTapped() {
+      this.fire('stop-upload-tapped');
+    },
+
     _computeThumbnail(currentFile) {
       if (currentFile) {
         const isImage = /image\/.*/.exec(currentFile.type);

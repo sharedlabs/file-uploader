@@ -59,7 +59,7 @@
      */
     addFile(file, options) {
       if (!this._isFileOnQueue(file)) {
-        this.uploadingFiles.set(file, {xhrParams: options, state: 'queue'});
+        this.uploadingFiles.set(file, {xhrParams: options, state: 'queued'});
 
         if (!this.uploading) {
           this._uploadStart();
@@ -72,17 +72,24 @@
         if (this._currentXHR) {
           this._currentXHR.abort();
         }
-        this._uploadEnd();
-        this.fire('file-upload-canceled', {files: this.uploadingFiles});
+        this._uploadEnd({canceled: true});
       }
     },
 
     _resumeQueue() {
+      let nextQueuedItem;
+
       for (const [file, detail] of this.uploadingFiles) {
-        if (detail.state === 'queue') {
-          this._uploadFile(file, detail.xhrParams);
+        if (detail.state === 'queued') {
+          nextQueuedItem = {file, detail};
           break;
         }
+      }
+      
+      if (nextQueuedItem) {
+        this._uploadFile(nextQueuedItem.file, nextQueuedItem.detail.xhrParams);
+      } else {
+        this._uploadEnd();
       }
     },
     
@@ -92,14 +99,14 @@
       }
 
       this._setUploading(true);
-      this.fire('file-upload-start');
+      this.fire('upload-start');
 
-      this._progressOverlay = this.create('file-uploader-progress', {
+      this._progressOverlay = this.create('file-uploader-progress-overlay', {
         opened: true,
         uploadingFiles: this.uploadingFiles
       });
 
-      this._progressOverlay.addEventListener('request-cancel-upload', _ => {
+      this._progressOverlay.addEventListener('stop-upload-tapped', _ => {
         this.cancelUpload();
       });
 
@@ -130,17 +137,27 @@
       });
     },
 
-    _uploadEnd() {
+    _uploadEnd(canceled = false) {
       if (!this.uploading) {
         return;
       }
 
-      this.fire('file-upload-end');
+      const files = [];
+
+      for (const [file, detail] of this.uploadingFiles) {
+        files.push(file);
+      }
+
+      this._setUploading(false);
       this._progressOverlay.opened = false;
-      // this._progressOverlay is automatically removed when it's closed
       this._progressOverlay = null;
       this.uploadingFiles.clear();
-      this._setUploading(false);
+
+      if (canceled) {
+        this.fire('upload-canceled', {files});
+      } else {
+        this.fire('upload-end', {files});
+      }
     },
 
     _isFileOnQueue(file) {
