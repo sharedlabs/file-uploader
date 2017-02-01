@@ -99,7 +99,7 @@
       <div class="detail">
         <div>[[_computeUploadingTitle(destinationText, localize)]]</div>
         <div class="detail__destination">[[destinationText]]</div>
-        <div>[[_computeLoadedDetail(currentFile, uploadingFiles.length, localize)]]</div>
+        <div>[[_computeLoadedDetail(currentFile, uploadingFiles.size, localize)]]</div>
         <button class="detail__button" on-tap="_stopTapped">[[localize('stop')]]</button>
         <paper-progress id="paperProgress" indeterminate></paper-progress>
       </div>
@@ -130,7 +130,7 @@
         value: true
       },
 
-      uploadingFiles: Array,
+      uploadingFiles: Map,
 
       // The file that is being currently uploaded.
       currentFile: Object,
@@ -186,10 +186,18 @@
       return this.localize('Uploading');
     },
 
-    _computeLoadedDetail(currentFile, uploadingFilesLength) {
+    _computeLoadedDetail(currentFile, uploadingFilesSize) {
+      let current = 0;
+
+      for (let [file, detail] of this.uploadingFiles) {
+        if (detail.state !== 'uploaded') {
+          current += 1;
+        }
+      }
+
       return this.localize('LoadedDetail',
-        'current', this.uploadingFiles.indexOf(currentFile) + 1,
-        'total', uploadingFilesLength);
+        'current', current,
+        'total', uploadingFilesSize);
     }
 
 

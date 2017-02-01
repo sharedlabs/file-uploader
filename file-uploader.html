@@ -17,20 +17,28 @@
 
     properties: {
 
-      // Files that are currently being uploaded
+      /**
+       * Files that are currently being uploaded.
+       * It's a Map where keys are files and values are upload details.
+       */
       uploadingFiles: {
-        type: Array,
+        type: Map,
         readOnly: true,
-        value: _ => []
+        value: _ => {
+          return new Map();
+        }
       },
 
+      // @optional
       url: String,
 
+      // @optional
       method: {
         type: String,
         value: 'POST',
       },
 
+      // @optional
       headers: Object,
 
       uploading: {
@@ -40,24 +48,18 @@
       },
 
       // Current XMLHTTPRequest
-      _currentXHR: Object,
-
-      _filesUploadDetail: {
-        type: WeakMap,
-        value: _ => {
-          return new WeakMap();
-        }
-      }
+      _currentXHR: Object
 
     },
 
     /**
      * Add a single file to the uploading queue.
+     * 
      * @param {!File}
      */
-    addFile(file) {
+    addFile(file, options) {
       if (!this._isFileOnQueue(file)) {
-        this.push('uploadingFiles', file);
+        this.uploadingFiles.set(file, {xhrParams: options, state: 'queue'});
 
         if (!this.uploading) {
           this._uploadStart();
@@ -76,9 +78,9 @@
     },
 
     _resumeQueue() {
-      for (const file of this.uploadingFiles) {
-        if (!this._filesUploadDetail.get(file)) {
-          this._upload(file);
+      for (const [file, detail] of this.uploadingFiles) {
+        if (detail.state === 'queue') {
+          this._uploadFile(file, detail.xhrParams);
           break;
         }
       }
@@ -94,8 +96,7 @@
 
       this._progressOverlay = this.create('file-uploader-progress', {
         opened: true,
-        uploadingFiles: this.uploadingFiles,
-        filesUploadDetail: this._filesUploadDetail
+        uploadingFiles: this.uploadingFiles
       });
 
       this._progressOverlay.addEventListener('request-cancel-upload', _ => {
@@ -105,22 +106,24 @@
       this._resumeQueue();
     },
 
-    _upload(file) {
+    _uploadFile(file, xhrParams) {
       if (!this.uploading) {
         return;
       }
 
       this._progressOverlay.currentFile = file;
+      const detail = this.uploadingFiles.get(file);
 
-      this._xhr().then(response => {
+      this._xhr(xhrParams).then(response => {
         const data = {file, url: response.url};
 
-        this._filesUploadDetail.set(file, {state: 'uploaded'});
-        this.fire('file-uploaded', data);
+        detail.state = 'uploaded';
+        this.fire('file-uploaded', {file, detail});
         return data;
       }).catch(error => {
-        this._filesUploadDetail.set(file, {state: 'failed'});
-        this.fire('file-upload-error', {file, error});
+        detail.state = 'failed';
+        detail.error = error;
+        this.fire('error', {file, detail});
         throw error;
       }).then(_ => {
         this._resumeQueue();
@@ -136,15 +139,21 @@
       this._progressOverlay.opened = false;
       // this._progressOverlay is automatically removed when it's closed
       this._progressOverlay = null;
-      this._filesUploadDetail = new WeakMap();
-      this.uploadingFiles([]);
+      this.uploadingFiles.clear();
       this._setUploading(false);
     },
 
     _isFileOnQueue(file) {
-      return this.uploadingFiles.find(f => {
-        return f.name === file.name && f.size === file.size;
-      });
+      let result = false;
+
+      for (let [f, detail] of this.uploadingFiles) {
+        if (f.name === file.name && f.size === file.size) {
+          result = true;
+          break;
+        }
+      }
+
+      return result;
     },
 
     _xhr({file, url = this.url, method = this.method, headers = this.headers} = {}) {
