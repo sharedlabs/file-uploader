@@ -37,6 +37,7 @@
       .header {
         @apply(--layout-horizontal);
         @apply(--layout-center);
+        padding: 8px 20px;
       }
 
       .header__title {
@@ -45,19 +46,17 @@
       }
 
       .header__close {
-        color: var(--paper-grey-500);
         cursor: pointer;
+        fill: var(--paper-grey-500);
+        height: 22px;
+        margin-right: -8px;
         padding: 8px;
+        width: 22px;
       }
 
       .files {
         @apply(--layout-horizontal);
         @apply(--layout-wrap);
-      }
-
-      .file {
-        height: 80px;
-        width: 50%;
       }
 
       .file__iron-image {
@@ -69,15 +68,17 @@
     <div id="container">
       <div class="header">
         <div class="header__title">[[_computeHeaderTitle(files, localize)]]</div>
-        <iron-icon class="header__close" icon="close" on-tap="_closeTapped"></iron-icon>
+        <svg class="header__close" on-tap="_closeTapped" viewBox="0 0 24 24">
+          <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+        </svg>
       </div>
 
       <div class="files">
-        <template is="dom-repeat" items="[[uploadedFiles]]">
-          <div class="file">
+        <template is="dom-repeat" items="[[_filteredFiles]]">
+          <div class="file" style$="[[_computeFileStyle(_filteredFiles.length, index)]]">
             <iron-image
                 class="file__iron-image"
-                src="[[_computeThumbnail(file)]]"
+                src="[[_computeThumbnail(item)]]"
                 sizing="cover"></iron-image>
           </div>
         </template>
@@ -150,7 +151,7 @@
 
     _filesChanged(files) {
       if (Array.isArray(files)) {
-        this._filteredFiles = files.splice(0, 5).reverse();
+        this._filteredFiles = files.slice(0).reverse().splice(0, 6);
       }
     },
 
@@ -158,11 +159,27 @@
       return this.localize('HeaderTitle', 'length', files.length);
     },
 
+    _computeFileStyle(filesLength, fileIndex) {
+      let styleAttr = '';
+
+      if (filesLength === 1) {
+        styleAttr = 'height: 200px; width: 100%;'
+      } else {
+        styleAttr = 'width: calc(50% - 1px); height: 100px; margin-top: 2px;';
+
+        if (!(fileIndex % 2)) {
+          styleAttr += ' margin-right: 2px;';
+        }
+      }
+
+      return styleAttr;
+    },
+
     _computeThumbnail(file) {
-      const isImage = /image\/.*/.exec(currentFile.type);
+      const isImage = /image\/.*/.exec(file.type);
 
       if (isImage) {
-        return URL.createObjectURL(currentFile);
+        return URL.createObjectURL(file);
       }
     },
 

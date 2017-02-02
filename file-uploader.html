@@ -170,7 +170,7 @@
       } else {
         this._completedOverlay = this.create('file-uploader-completed-overlay', {
           opened: true,
-          files: this.files,
+          files: files,
           onDetach: _ => {
             this._completedOverlay = null;
           }
