@@ -69,7 +69,7 @@
     <div id="container">
       <div class="header">
         <div class="header__title">[[_computeHeaderTitle(files, localize)]]</div>
-        <iron-icon class="header__close" icon="close"></iron-icon>
+        <iron-icon class="header__close" icon="close" on-tap="_closeTapped"></iron-icon>
       </div>
 
       <div class="files">
@@ -99,10 +99,14 @@
 
       files: {
         type: Array,
+        value: _ => [],
         observer: '_filesChanged'
       },
 
-      _filteredFiles: Array,
+      language: {
+        type: String,
+        value: 'en'
+      },
 
       resources: {
         value: _ => {
@@ -115,7 +119,27 @@
             }
           };
         }
-      }
+      },
+
+      // @override AnimatedOverlayBehavior
+      noCancelOnEscKey: {
+        type: Boolean,
+        value: true
+      },
+
+      // @override AnimatedOverlayBehavior
+      noCancelOnPopState: {
+        type: Boolean,
+        value: true
+      },
+
+      // @override AnimatedOverlayBehavior
+      removeOnClose: {
+        type: Boolean,
+        value: false
+      },
+
+      _filteredFiles: Array
 
     },
 
@@ -126,7 +150,7 @@
 
     _filesChanged(files) {
       if (Array.isArray(files)) {
-        this._filteredFiles = files.splice(0, 5);
+        this._filteredFiles = files.splice(0, 5).reverse();
       }
     },
 
@@ -140,6 +164,11 @@
       if (isImage) {
         return URL.createObjectURL(currentFile);
       }
+    },
+
+    _closeTapped() {
+      this.removeOnClose = true;
+      this.opened = false;
     }
 
   });

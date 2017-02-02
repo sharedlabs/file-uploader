@@ -101,6 +101,10 @@
       this._setUploading(true);
       this.fire('upload-start');
 
+      if (this._completedOverlay) {
+        this._completedOverlay.opened = false;
+      }
+
       this._progressOverlay = this.create('file-uploader-progress-overlay', {
         opened: true,
         uploadingFiles: this.uploadingFiles
@@ -157,6 +161,20 @@
         this.fire('upload-canceled', {files});
       } else {
         this.fire('upload-end', {files});
+      }
+
+      // Display completed overlay
+      if (this._completedOverlay) {
+        this._completedOverlay.files = this._completedOverlay.files.concat(files);
+        this._completedOverlay.opened = true;
+      } else {
+        this._completedOverlay = this.create('file-uploader-completed-overlay', {
+          opened: true,
+          files: this.files,
+          onDetach: _ => {
+            this._completedOverlay = null;
+          }
+        });
       }
     },
 
