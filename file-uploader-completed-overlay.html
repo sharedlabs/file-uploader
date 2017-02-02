@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../overlay-container/animated-overlay-behavior.html">
 <link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
+<link rel="import" href="../iron-image/iron-image.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <!--
@@ -33,9 +34,54 @@
         }
       }
 
+      .header {
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+      }
+
+      .header__title {
+        @apply(--layout-flex);
+        font-size: 18px;
+      }
+
+      .header__close {
+        color: var(--paper-grey-500);
+        cursor: pointer;
+        padding: 8px;
+      }
+
+      .files {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+      }
+
+      .file {
+        height: 80px;
+        width: 50%;
+      }
+
+      .file__iron-image {
+        height: 100%;
+        width: 100%;
+      }
     </style>
 
     <div id="container">
+      <div class="header">
+        <div class="header__title">[[_computeHeaderTitle(files, localize)]]</div>
+        <iron-icon class="header__close" icon="close"></iron-icon>
+      </div>
+
+      <div class="files">
+        <template is="dom-repeat" items="[[uploadedFiles]]">
+          <div class="file">
+            <iron-image
+                class="file__iron-image"
+                src="[[_computeThumbnail(file)]]"
+                sizing="cover"></iron-image>
+          </div>
+        </template>
+      </div>
     </div>
 
   </template>
@@ -50,12 +96,51 @@
     is: 'file-uploader-completed-overlay',
 
     properties: {
+
+      files: {
+        type: Array,
+        observer: '_filesChanged'
+      },
+
+      _filteredFiles: Array,
+
+      resources: {
+        value: _ => {
+          return {
+            'en': {
+              'HeaderTitle': '{length} items uploaded'
+            },
+            'es': {
+              'HeaderTitle': 'Se han subido {length} elementos'
+            }
+          };
+        }
+      }
+
     },
 
     behaviors: [
       AnimatedOverlayBehavior,
       Polymer.AppLocalizeBehavior
-    ]
+    ],
+
+    _filesChanged(files) {
+      if (Array.isArray(files)) {
+        this._filteredFiles = files.splice(0, 5);
+      }
+    },
+
+    _computeHeaderTitle(files) {
+      return this.localize('HeaderTitle', 'length', files.length);
+    },
+
+    _computeThumbnail(file) {
+      const isImage = /image\/.*/.exec(currentFile.type);
+
+      if (isImage) {
+        return URL.createObjectURL(currentFile);
+      }
+    }
 
   });
 
