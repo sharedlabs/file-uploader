@@ -1,8 +1,8 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../overlay-container/animated-overlay-behavior.html">
 <link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
-<link rel="import" href="../iron-image/iron-image.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../offthread-image/offthread-image.html">
 
 <!--
 `file-uploader-completed-overlay`
@@ -15,20 +15,19 @@
       :host {
         background: white;
         border-radius: 4px;
-        bottom: 20px;
+        bottom: 30px;
         box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.2);
         display: inline-block;
-        left: 20px;
-        min-height: 100px;
+        left: 30px;
         overflow: hidden;
         position: fixed;
-        right: 20px;
+        right: 30px;
+        width: 100%;
       }
 
       @media(min-width: 642px) {
         :host {
-          bottom: 30px;
-          left: 30px;
+          bottom: 50px;
           right: auto;
           width: 320px;
         }
@@ -52,14 +51,21 @@
         margin-right: -8px;
         padding: 8px;
         width: 22px;
+        border-radius: 50%;
+      }
+
+      .header__close:hover {
+        background: var(--paper-grey-200);
       }
 
       .files {
         @apply(--layout-horizontal);
         @apply(--layout-wrap);
+        max-height: 224px;
+        overflow-y: auto;
       }
 
-      .file__iron-image {
+      .file__image {
         height: 100%;
         width: 100%;
       }
@@ -74,12 +80,12 @@
       </div>
 
       <div class="files">
-        <template is="dom-repeat" items="[[_filteredFiles]]">
+        <template is="dom-repeat" items="[[_filteredFiles]]" as="file">
           <div class="file" style$="[[_computeFileStyle(_filteredFiles.length, index)]]">
-            <iron-image
-                class="file__iron-image"
-                src="[[_computeThumbnail(item)]]"
-                sizing="cover"></iron-image>
+            <offthread-image
+                class="file__image"
+                src="[[_computeImageUrl(file)]]"
+                sizing="cover"></offthread-image>
           </div>
         </template>
       </div>
@@ -113,10 +119,10 @@
         value: _ => {
           return {
             'en': {
-              'HeaderTitle': '{length} items uploaded'
+              'HeaderTitle': '{length, plural, one {1 item uploaded} other {{length} items uploaded}}'
             },
             'es': {
-              'HeaderTitle': 'Se han subido {length} elementos'
+              'HeaderTitle': 'Se {length, plural, one {ha subido 1 elemento} other {han subido {length} elementos}}'
             }
           };
         }
@@ -151,12 +157,18 @@
 
     _filesChanged(files) {
       if (Array.isArray(files)) {
-        this._filteredFiles = files.slice(0).reverse().splice(0, 6);
+        this._filteredFiles = files.slice(0).filter(file => {
+          return file.state === 'uploaded';
+        }).reverse();
       }
     },
 
     _computeHeaderTitle(files) {
-      return this.localize('HeaderTitle', 'length', files.length);
+      const uploadedLength = files.filter(file => {
+        return file.state === 'uploaded';
+      }).length;
+
+      return this.localize('HeaderTitle', 'length', String(uploadedLength));
     },
 
     _computeFileStyle(filesLength, fileIndex) {
@@ -165,7 +177,7 @@
       if (filesLength === 1) {
         styleAttr = 'height: 200px; width: 100%;'
       } else {
-        styleAttr = 'width: calc(50% - 1px); height: 100px; margin-top: 2px;';
+        styleAttr = 'width: calc(50% - 1px); height: 100px; margin-bottom: 2px;';
 
         if (!(fileIndex % 2)) {
           styleAttr += ' margin-right: 2px;';
@@ -175,11 +187,11 @@
       return styleAttr;
     },
 
-    _computeThumbnail(file) {
-      const isImage = /image\/.*/.exec(file.type);
+    _computeImageUrl(file) {
+      const isImage = /image\/.*/.exec(file.file.type);
 
       if (isImage) {
-        return URL.createObjectURL(file);
+        return URL.createObjectURL(file.file);
       }
     },
 

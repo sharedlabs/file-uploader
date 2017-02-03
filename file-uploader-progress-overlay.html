@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
-<link rel="import" href="../iron-image/iron-image.html">
+<link rel="import" href="../offthread-image/offthread-image.html">
 <link rel="import" href="../overlay-container/animated-overlay-behavior.html">
 <link rel="import" href="../paper-progress/paper-progress.html">
 
@@ -16,19 +16,20 @@
       :host {
         background: white;
         border-radius: 4px;
-        bottom: 20px;
+        bottom: 30px;
         box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.2);
         display: inline-block;
         height: 100px;
-        left: 20px;
+        left: 30px;
         overflow: hidden;
         position: fixed;
-        right: 20px;
+        right: 30px;
+        width: 100%;
       }
 
       @media(min-width: 642px) {
         :host {
-          bottom: 30px;
+          bottom: 50px;
           left: 30px;
           right: auto;
           width: 320px;
@@ -49,7 +50,7 @@
         height: 100%;
       }
 
-      iron-image {
+      offthread-image {
         width: 100px;
         height: 100%;
       }
@@ -94,7 +95,7 @@
     </style>
 
     <div id="container">
-      <iron-image sizing="cover" src$="[[_computeThumbnail(currentFile)]]"></iron-image>
+      <offthread-image sizing="cover" src="[[_computeImageUrl(currentFile)]]"></offthread-image>
 
       <div class="detail">
         <div>[[_computeUploadingTitle(destinationText, localize)]]</div>
@@ -140,6 +141,8 @@
         value: null
       },
 
+      onStopTapped: Function,
+
       language: {
         type: String,
         value: 'en'
@@ -173,10 +176,12 @@
     ],
 
     _stopTapped() {
-      this.fire('stop-upload-tapped');
+      if (typeof this.onStopTapped === 'function') {
+        this.onStopTapped();
+      }
     },
 
-    _computeThumbnail(currentFile) {
+    _computeImageUrl(currentFile) {
       if (currentFile) {
         const isImage = /image\/.*/.exec(currentFile.type);
 
@@ -197,13 +202,13 @@
       let current = 0;
 
       for (let [file, detail] of this.uploadingFiles) {
-        if (detail.state !== 'uploaded') {
+        if (detail.state !== 'queued') {
           current += 1;
         }
       }
 
       return this.localize('LoadedDetail',
-        'current', current,
+        'current', String(current),
         'total', uploadingFilesSize);
     }
 
