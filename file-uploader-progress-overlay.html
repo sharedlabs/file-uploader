@@ -141,8 +141,6 @@
         value: null
       },
 
-      onStopTapped: Function,
-
       language: {
         type: String,
         value: 'en'
@@ -176,9 +174,7 @@
     ],
 
     _stopTapped() {
-      if (typeof this.onStopTapped === 'function') {
-        this.onStopTapped();
-      }
+      this.fire('stop-tapped');
     },
 
     _computeImageUrl(currentFile) {

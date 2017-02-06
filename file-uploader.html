@@ -7,6 +7,22 @@
 
 @demo demo/index.html
 -->
+<dom-module id="file-uploader">
+  <template>
+
+    <file-uploader-progress-overlay
+      id="progressOverlay"
+      on-stop-tapped="cancelUpload"
+      uploading-files="[[uploadingFiles]]"
+      on-overlay-close-animation-finish="_onProgressOverlayAnimatedOut"></file-uploader-progress-overlay>
+
+    <file-uploader-completed-overlay
+      id="completedOverlay"
+      on-overlay-close-animation-finish="_uploadStart"></file-uploader-completed-overlay>
+
+  </template>
+</dom-module>
+
 <script>
 (function() {
   'use strict';
@@ -48,11 +64,7 @@
       },
 
       // Current XMLHTTPRequest
-      _currentXHR: Object,
-
-      _progressOverlay: Object,
-
-      _completedOverlay: Object
+      _currentXHR: Object
 
     },
 
@@ -80,6 +92,25 @@
       }
     },
 
+    _onProgressOverlayAnimatedOut() {
+      this.$.completedOverlay.opened = true;
+    },
+
+    _uploadStart() {
+      if (this.uploading || !this.uploadingFiles.size) {
+        return;
+      }
+
+      if (this.$.completedOverlay.opened) {
+        this.$.completedOverlay.opened = false;
+      } else {
+        this._setUploading(true);
+        this.$.progressOverlay.opened = true;
+        this._resumeQueue();
+        this.fire('upload-start');
+      }
+    },
+
     _resumeQueue() {
       let nextQueued;
 
@@ -96,44 +127,13 @@
         this._uploadEnd();
       }
     },
-    
-    _uploadStart() {
-      if (this.uploading) {
-        return;
-      }
-
-      this._setUploading(true);
-      this.fire('upload-start');
-
-      this._progressOverlay = this.create('file-uploader-progress-overlay', {
-        uploadingFiles: this.uploadingFiles,
-        onStopTapped: _ => {
-          this.cancelUpload();
-        },
-        onDetach: _ => {
-          this._progressOverlay = null;
-        }
-      });
-
-      if (this._completedOverlay) {
-        this._completedOverlay.addEventListener('overlay-close-animation-finish', _ => {
-          this._progressOverlay.opened = true;
-          this._resumeQueue();
-        });
-
-        this._completedOverlay.opened = false;
-      } else {
-        this._progressOverlay.opened = true;
-        this._resumeQueue();        
-      }
-    },
 
     _uploadFile(file, detail) {
       if (!this.uploading) {
         return;
       }
 
-      this._progressOverlay.currentFile = file;
+      this.$.progressOverlay.currentFile = file;
 
       (detail.xhrParamsPromise || Promise.resolve()).then(xhrParams => {
         return this._xhr(xhrParams).then(response => {
@@ -158,38 +158,24 @@
         return;
       }
 
+      this._setUploading(false);
+
       const files = [];
 
       for (const [file, detail] of this.uploadingFiles) {
-        files.push({file, state: detail.state});
+        if (detail.state === 'uploaded') {
+          files.push(file);
+        }
       }
 
-      this._setUploading(false);
-
-      // Create completed overlay
-      if (this._completedOverlay) {
-        this._completedOverlay.files = this._completedOverlay.files.concat(files);
-      } else {
-        this._completedOverlay = this.create('file-uploader-completed-overlay', {
-          files: files,
-          onDetach: _ => {
-            this._completedOverlay = null;
-          }
-        });
-      }
-
-      this._progressOverlay.onDetach = _ => {
-        this._progressOverlay = null;
-        this._completedOverlay.opened = true;
-      };
-      
-      this._progressOverlay.opened = false;
+      this.$.completedOverlay.addFiles(files); 
       this.uploadingFiles.clear();
+      this.$.progressOverlay.opened = false;
 
       if (canceled) {
-        this.fire('upload-canceled', {files});
+        this.fire('upload-canceled');
       } else {
-        this.fire('upload-end', {files});
+        this.fire('upload-end');
       }
     },
 
