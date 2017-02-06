@@ -6,8 +6,8 @@ File uploader for multiple files with a progress bar.
 
 It uses the [offthread-image](https://github.com/sharedlabs/offthread-image) element to render the thumbnails so it performs awesome on slow devices like mobile phones.
 
-### Preview
-![](https://media.giphy.com/media/l3q2wmnMfDGpVvnxK/giphy.gif)
+### Preview (Uploading files to Amazon S3)
+![](http://i.giphy.com/l0ExvurNrcBCmwaFa.gif)
 
 ### Use
 ```html
