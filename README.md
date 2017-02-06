@@ -17,6 +17,6 @@ It uses the [offthread-image](https://github.com/sharedlabs/offthread-image) ele
 this.$.fileUploader.addFile(file, {url, method, headers});
 ```
 
-### Browser support
+### Browsers support
 
 Any browser that supports Polymer 1.0
