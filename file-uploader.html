@@ -173,9 +173,9 @@
       this.$.progressOverlay.opened = false;
 
       if (canceled) {
-        this.fire('upload-canceled', {file});
+        this.fire('upload-canceled', {files});
       } else {
-        this.fire('upload-end', {file});
+        this.fire('upload-end', {files});
       }
     },
 
