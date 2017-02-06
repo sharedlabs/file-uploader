@@ -1,0 +1,215 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../overlay-container/animated-overlay-behavior.html">
+<link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../offthread-image/offthread-image.html">
+
+<!--
+`file-uploader-completed-overlay`
+
+@demo demo/index.html
+-->
+<dom-module id="file-uploader-completed-overlay">
+  <template>
+    <style>
+      :host {
+        background: white;
+        border-radius: 4px;
+        bottom: 30px;
+        box-shadow: 0 16px 24px 2px rgba(0,0,0,0.14), 0 6px 30px 5px rgba(0,0,0,0.12), 0 8px 10px -5px rgba(0,0,0,0.2);
+        display: inline-block;
+        left: 30px;
+        overflow: hidden;
+        position: fixed;
+        right: 30px;
+        width: 100%;
+      }
+
+      @media(min-width: 642px) {
+        :host {
+          bottom: 50px;
+          right: auto;
+          width: 320px;
+        }
+      }
+
+      .header {
+        @apply(--layout-horizontal);
+        @apply(--layout-center);
+        padding: 8px 20px;
+      }
+
+      .header__title {
+        @apply(--layout-flex);
+        font-size: 18px;
+      }
+
+      .header__close {
+        border-radius: 50%;
+        cursor: pointer;
+        fill: var(--paper-grey-500);
+        height: 22px;
+        margin-right: -8px;
+        padding: 8px;
+        width: 22px;
+      }
+
+      .header__close:hover {
+        background: var(--paper-grey-200);
+      }
+
+      #files {
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+        max-height: 224px;
+        overflow-y: auto;
+      }
+
+      .file__image {
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <div id="container">
+      <div class="header">
+        <div class="header__title">[[_computeHeaderTitle(_files.length, localize)]]</div>
+        <svg class="header__close" on-tap="_closeTapped" viewBox="0 0 24 24">
+          <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+        </svg>
+      </div>
+
+      <div id="files"></div>
+    </div>
+
+  </template>
+</dom-module>
+
+<script>
+(function() {
+  'use strict';
+
+  Polymer({
+
+    is: 'file-uploader-completed-overlay',
+
+    properties: {
+
+      language: {
+        type: String,
+        value: 'en'
+      },
+
+      resources: {
+        value: _ => {
+          return {
+            'en': {
+              'HeaderTitle': '{length, plural, one {1 item uploaded} other {{length} items uploaded}}'
+            },
+            'es': {
+              'HeaderTitle': 'Se {length, plural, one {ha subido 1 elemento} other {han subido {length} elementos}}'
+            }
+          };
+        }
+      },
+
+      // @override AnimatedOverlayBehavior
+      noCancelOnEscKey: {
+        type: Boolean,
+        value: true
+      },
+
+      // @override AnimatedOverlayBehavior
+      noCancelOnPopState: {
+        type: Boolean,
+        value: true
+      },
+
+      _files: Array
+
+    },
+
+    behaviors: [
+      AnimatedOverlayBehavior,
+      Polymer.AppLocalizeBehavior
+    ],
+
+    listeners: {
+      'overlay-opened': '_overlayOpened',
+      'overlay-closed-animation-finish': '_overlayAnimatedOut',
+    },
+
+    addFiles(files) {
+      if (Array.isArray(this._files)) {
+        this._files = this._files.concat(files).slice(0).reverse();
+      } else {
+        this._files = files;
+      }
+    },
+
+    _overlayOpened() {
+      this._renderThumbnails();
+    },
+
+    _overlayAnimatedOut() {
+      this.$.files.innerHTML = '';
+    },
+
+    _renderThumbnails() {
+      if (!this._files) {
+        return;
+      }
+
+      this.$.files.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+
+      this._files.forEach((file, index) => {
+        const el = document.createElement('offthread-image');
+
+        el.setAttribute('class', 'file');
+        el.style = this._computeFileStyle(this._files.length, index);
+        el.sizing = 'cover';
+        el.src = this._computeImageUrl(file);
+        fragment.appendChild(el);
+      });
+
+      Polymer.dom(this.$.files).appendChild(fragment);
+    },
+
+    _computeImageUrl(file) {
+      const isImage = /image\/.*/.exec(file.type);
+
+      if (isImage) {
+        return URL.createObjectURL(file);
+      }
+    },
+
+    _computeFileStyle(filesLength, fileIndex) {
+        let styleAttr = '';
+
+        if (filesLength === 1) {
+          styleAttr = 'height: 200px; width: 100%;'
+        } else {
+          styleAttr = 'width: calc(50% - 1px); height: 100px; margin-bottom: 2px;';
+        }
+
+        if (filesLength > 1 && !(fileIndex % 2)) {
+          styleAttr += ' margin-right: 2px;';
+        }
+
+        return styleAttr;
+    },
+
+    _computeHeaderTitle(filesLength) {
+      return this.localize('HeaderTitle', 'length', String(filesLength));
+    },
+
+    _closeTapped() {
+      this._files = [];
+      this.opened = false;
+    }
+
+  });
+
+}());
+</script>

@@ -3,11 +3,13 @@
   "description": "Element for multiple file upload",
   "main": "file-uploader.html",
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.4.0",
+    "app-localize-behavior": "PolymerElements/app-localize-behavior#^0.10.1",
     "input-file": "git@github.com:sharedlabs/input-file.git",
-    "overlay-container": "git@github.com:sharedlabs/overlay-container.git",
     "iron-image": "PolymerElements/iron-image#^1.2.5",
-    "paper-progress": "PolymerElements/paper-progress#^1.0.11"
+    "offthread-image": "git@github.com:sharedlabs/offthread-image.git",
+    "overlay-container": "git@github.com:sharedlabs/overlay-container.git",
+    "paper-progress": "PolymerElements/paper-progress#^1.0.11",
+    "polymer": "Polymer/polymer#^1.7.0"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
