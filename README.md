@@ -1,3 +1,3 @@
 # file-uploader
 
-![](http://www.giphy.com/gifs/l3q2wmnMfDGpVvnxK.gif)
+![](https://media.giphy.com/media/l3q2wmnMfDGpVvnxK/giphy.gif)
