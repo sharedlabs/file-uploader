@@ -141,7 +141,7 @@
 
     addFiles(files) {
       if (Array.isArray(this._files)) {
-        this._files = this._files.concat(files).slice(0).reverse();
+        this._files = files.reverse().concat(this._files).slice(0);
       } else {
         this._files = files;
       }
