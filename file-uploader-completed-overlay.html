@@ -147,19 +147,19 @@
         this._toggleListeners({enable: false});
       }
 
-      _toggleListeners({enable}) {
-        const m = enable ? 'addEventListener' : 'removeEventListener';
-
-        this[m]('overlay-close-animation-finish', this._overlayAnimatedOut);
-        this[m]('overlay-opened', this._overlayOpened);
-      }
-
       addFiles(files) {
         if (Array.isArray(this._files)) {
           this._files = files.reverse().concat(this._files).slice(0);
         } else {
           this._files = files;
         }
+      }
+
+      _toggleListeners({enable}) {
+        const m = enable ? 'addEventListener' : 'removeEventListener';
+
+        this[m]('overlay-close-animation-finish', this._overlayAnimatedOut);
+        this[m]('overlay-opened', this._overlayOpened);
       }
 
       _overlayOpened() {
