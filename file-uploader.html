@@ -1,4 +1,4 @@
-<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/polymer-element.html">
 <link rel="import" href="file-uploader-progress-overlay.html">
 <link rel="import" href="file-uploader-completed-overlay.html">
 
@@ -12,7 +12,7 @@
 
     <file-uploader-progress-overlay
       id="progressOverlay"
-      on-stop-tapped="cancelUpload"
+      on-stop="cancelUpload"
       uploading-files="[[uploadingFiles]]"
       on-overlay-close-animation-finish="_onProgressOverlayAnimatedOut"></file-uploader-progress-overlay>
 
@@ -21,225 +21,237 @@
       on-overlay-close-animation-finish="_uploadStart"></file-uploader-completed-overlay>
 
   </template>
-</dom-module>
 
-<script>
-(function() {
-  'use strict';
+  <script>
+    
+    class FileUploader extends Polymer.Element {
 
-  Polymer({
+      static get is() {return 'file-uploader';}
 
-    is: 'file-uploader',
+      static get config() {
+        return {
+          properties: {
 
-    properties: {
+            /**
+            * Files that are currently being uploaded.
+            * It's a Map where keys are files and values are upload details.
+            */
+            uploadingFiles: {
+              type: Map,
+              readOnly: true,
+              value: _ => {
+                return new Map();
+              }
+            },
+
+            // @optional
+            url: String,
+
+            // @optional
+            method: {
+              type: String,
+              value: 'POST',
+            },
+
+            // @optional
+            headers: Object,
+
+            uploading: {
+              type: Boolean,
+              readOnly: true,
+              value: false
+            },
+
+            // Current XMLHTTPRequest
+            _currentXHR: Object
+
+          }
+        };
+      }
 
       /**
-       * Files that are currently being uploaded.
-       * It's a Map where keys are files and values are upload details.
-       */
-      uploadingFiles: {
-        type: Map,
-        readOnly: true,
-        value: _ => {
-          return new Map();
+      * Add a single file to the uploading queue.
+      * 
+      * @param {!File}
+      */
+      addFile(file, xhrParamsPromise) {
+        if (file.constructor.name === 'FileList') {
+          for (const f of file) {
+            this.addFile(f);
+          }
+          return;
         }
-      },
 
-      // @optional
-      url: String,
+        if (file && !this._isFileOnQueue(file)) {
+          this.uploadingFiles.set(file, {xhrParamsPromise, state: 'queued'});
 
-      // @optional
-      method: {
-        type: String,
-        value: 'POST',
-      },
+          if (!this.uploading) {
+            this._uploadStart();
+          }
+        }
+      }
 
-      // @optional
-      headers: Object,
+      cancelUpload() {
+        if (this.uploading) {
+          if (this._currentXHR) {
+            this._currentXHR.abort();
+          }
+          this._uploadEnd({canceled: true});
+        }
+      }
 
-      uploading: {
-        type: Boolean,
-        readOnly: true,
-        value: false
-      },
+      _onProgressOverlayAnimatedOut() {
+        this.$.completedOverlay.opened = true;
+      }
 
-      // Current XMLHTTPRequest
-      _currentXHR: Object
+      _uploadStart() {
+        if (this.uploading || !this.uploadingFiles.size) {
+          return;
+        }
 
-    },
+        if (this.$.completedOverlay.opened) {
+          this.$.completedOverlay.opened = false;
+        } else {
+          this._setUploading(true);
+          this.$.progressOverlay.opened = true;
+          this._resumeQueue();
+          this.dispatchEvent(new CustomEvent('upload-start'));
+        }
+      }
 
-    /**
-     * Add a single file to the uploading queue.
-     * 
-     * @param {!File}
-     */
-    addFile(file, xhrParamsPromise) {
-      if (!this._isFileOnQueue(file)) {
-        this.uploadingFiles.set(file, {xhrParamsPromise, state: 'queued'});
+      _resumeQueue() {
+        let nextQueued;
 
+        for (const [file, detail] of this.uploadingFiles) {
+          if (detail.state === 'queued') {
+            nextQueued = {file, detail};
+            break;
+          }
+        }
+        
+        if (nextQueued) {
+          this._uploadFile(nextQueued.file, nextQueued.detail);
+        } else {
+          this._uploadEnd();
+        }
+      }
+
+      _uploadFile(file, detail) {
         if (!this.uploading) {
-          this._uploadStart();
+          return;
         }
-      }
-    },
 
-    cancelUpload() {
-      if (this.uploading) {
-        if (this._currentXHR) {
-          this._currentXHR.abort();
-        }
-        this._uploadEnd({canceled: true});
-      }
-    },
+        this.$.progressOverlay.currentFile = file;
 
-    _onProgressOverlayAnimatedOut() {
-      this.$.completedOverlay.opened = true;
-    },
+        (detail.xhrParamsPromise || Promise.resolve({})).then(xhrParams => {
+          xhrParams.file = file;
 
-    _uploadStart() {
-      if (this.uploading || !this.uploadingFiles.size) {
-        return;
-      }
+          return this._xhr(xhrParams).then(response => {
+            const data = {file, url: response.url};
 
-      if (this.$.completedOverlay.opened) {
-        this.$.completedOverlay.opened = false;
-      } else {
-        this._setUploading(true);
-        this.$.progressOverlay.opened = true;
-        this._resumeQueue();
-        this.fire('upload-start');
-      }
-    },
-
-    _resumeQueue() {
-      let nextQueued;
-
-      for (const [file, detail] of this.uploadingFiles) {
-        if (detail.state === 'queued') {
-          nextQueued = {file, detail};
-          break;
-        }
-      }
-      
-      if (nextQueued) {
-        this._uploadFile(nextQueued.file, nextQueued.detail);
-      } else {
-        this._uploadEnd();
-      }
-    },
-
-    _uploadFile(file, detail) {
-      if (!this.uploading) {
-        return;
-      }
-
-      this.$.progressOverlay.currentFile = file;
-
-      (detail.xhrParamsPromise || Promise.resolve({})).then(xhrParams => {
-        xhrParams.file = file;
-
-        return this._xhr(xhrParams).then(response => {
-          const data = {file, url: response.url};
-
-          detail.state = 'uploaded';
-          this.fire('file-uploaded', {file, detail});
-          return data;
+            detail.state = 'uploaded';
+            this.dispatchEvent(new CustomEvent('file-uploaded', {
+              detail: {file, detail}
+            }));
+            return data;
+          });
+        }).catch(error => {
+          detail.state = 'failed'; // failed
+          detail.error = error;
+          this.dispatchEvent(new CustomEvent('error', {
+            detail: {file, detail}
+          }));
+          return error;
+        }).then(_ => {
+          this._resumeQueue();
         });
-      }).catch(error => {
-        detail.state = 'failed';
-        detail.error = error;
-        this.fire('error', {file, detail});
-        return error;
-      }).then(_ => {
-        this._resumeQueue();
-      });
-    },
-
-    _uploadEnd(canceled = false) {
-      if (!this.uploading) {
-        return;
       }
 
-      this._setUploading(false);
-
-      const files = [];
-
-      for (const [file, detail] of this.uploadingFiles) {
-        if (detail.state === 'uploaded') {
-          files.push(file);
-        }
-      }
-
-      this.$.completedOverlay.addFiles(files); 
-      this.uploadingFiles.clear();
-      this.$.progressOverlay.opened = false;
-
-      if (canceled) {
-        this.fire('upload-canceled', {files});
-      } else {
-        this.fire('upload-end', {files});
-      }
-    },
-
-    _isFileOnQueue(file) {
-      let result = false;
-
-      for (let [f, detail] of this.uploadingFiles) {
-        if (f.name === file.name && f.size === file.size) {
-          result = true;
-          break;
-        }
-      }
-
-      return result;
-    },
-
-    _xhr({file, url = this.url, method = this.method, headers = this.headers} = {}) {
-      return new Promise((resolve, reject) => {
-        if (!url) {
-          return reject(new Error('file-uploader requires an URL'));
+      _uploadEnd(canceled = false) {
+        if (!this.uploading) {
+          return;
         }
 
-        if (!file) {
-          return reject(new Error('file-uploader requires a file'));
-        }
+        this._setUploading(false);
+        const files = [];
 
-        const xhr = new XMLHttpRequest();
-
-        xhr.addEventListener('loadend', _ => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve({file, url});
-          } else {
-            reject(xhr.statusText);
-          }
-        });
-
-        xhr.addEventListener('error', event => {
-          reject(event.currentTarget.response);
-        });
-
-        xhr.open(method, url, true);
-
-        if (headers) {
-          const constructorName = headers.constructor.name;
-          if (constructorName === 'Headers') {
-            headers.forEach(xhr.setRequestHeader.bind(xhr));
-          } else if (constructorName === 'Object') {
-            Object.keys(headers).forEach(name => {
-              xhr.setRequestHeader(name, headers[name]);
-            });
-          } else {
-            return reject(
-              new Error('Invalid headers. Object or Header instance allowed'));
+        for (const [file, detail] of this.uploadingFiles) {
+          if (detail.state === 'uploaded') {
+            files.push(file);
           }
         }
 
-        xhr.send(file);
-        this._currentXHR = xhr;
-      });
-    },
+        this.$.completedOverlay.addFiles(files); 
+        this.uploadingFiles.clear();
+        this.$.progressOverlay.opened = false;
 
-  });
+        let eventName = canceled ? 'upload-canceled' : 'upload-end';
+        this.dispatchEvent(new CustomEvent(eventName, {
+          detail: {files}
+        }));
+      }
 
-}());
-</script>
+      _isFileOnQueue(file) {
+        let result = false;
+
+        for (let [f, detail] of this.uploadingFiles) {
+          if (f.name === file.name && f.size === file.size) {
+            result = true;
+            break;
+          }
+        }
+
+        return result;
+      }
+
+      _xhr({file, url = this.url, method = this.method, headers = this.headers} = {}) {
+        return new Promise((resolve, reject) => {
+          if (!url) {
+            return reject(new Error('file-uploader requires an URL'));
+          }
+
+          if (!file) {
+            return reject(new Error('file-uploader requires a file'));
+          }
+
+          const xhr = new XMLHttpRequest();
+
+          xhr.addEventListener('loadend', _ => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve({file, url});
+            } else {
+              reject(xhr.statusText);
+            }
+          });
+
+          xhr.addEventListener('error', event => {
+            reject(event.currentTarget.response);
+          });
+
+          xhr.open(method, url, true);
+
+          if (headers) {
+            const constructorName = headers.constructor.name;
+            if (constructorName === 'Headers') {
+              headers.forEach(xhr.setRequestHeader.bind(xhr));
+            } else if (constructorName === 'Object') {
+              Object.keys(headers).forEach(name => {
+                xhr.setRequestHeader(name, headers[name]);
+              });
+            } else {
+              return reject(
+                new Error('Invalid headers. Object or Header instance allowed'));
+            }
+          }
+
+          xhr.send(file);
+          this._currentXHR = xhr;
+        });
+      }
+
+    }
+
+    customElements.define(FileUploader.is, FileUploader);
+
+  </script>
+</dom-module>

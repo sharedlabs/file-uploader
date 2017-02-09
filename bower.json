@@ -3,17 +3,16 @@
   "description": "Element for multiple file upload",
   "main": "file-uploader.html",
   "dependencies": {
-    "app-localize-behavior": "PolymerElements/app-localize-behavior#^0.10.1",
-    "input-file": "git@github.com:sharedlabs/input-file.git",
+    "app-localize-behavior": "git@github.com:sharedlabs/app-localize-behavior.git#^1.0.0",
     "iron-image": "PolymerElements/iron-image#^1.2.5",
-    "offthread-image": "git@github.com:sharedlabs/offthread-image.git",
-    "overlay-container": "git@github.com:sharedlabs/overlay-container.git",
+    "offthread-image": "git@github.com:sharedlabs/offthread-image.git#^1.0.0",
+    "overlay-container": "git@github.com:sharedlabs/overlay-container.git#^1.0.0",
     "paper-progress": "PolymerElements/paper-progress#^1.0.11",
-    "polymer": "Polymer/polymer#^1.7.0"
+    "polymer": "Polymer/polymer#2.0-preview"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
-    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "input-file": "git@github.com:sharedlabs/input-file.git#^1.0.0",
+    "iron-component-page": "PolymerElements/iron-component-page#2.0-preview",
     "web-component-tester": "^4.0.0",
     "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
   }

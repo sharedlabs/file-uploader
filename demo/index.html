@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <link rel="import" href="../file-uploader.html">
+    <link rel="import" href="../../input-file/input-file.html">
 
     <style is="custom-style">
       body {
@@ -26,15 +27,22 @@
   </head>
   <body>
 
-    <file-uploader id="fileUploader"></file-uploader>
-    <input type="file" multiple onchange="onInputChange(event)">
+    <dom-bind>
+      <template>
+        <file-uploader id="fileUploader"></file-uploader>
+        <input-file on-files-selected="onFilesSelected"></input-file>
+      </template>
+    </dom-bind>
 
     <script>
-      function onInputChange(event) {
+      document.querySelector('dom-bind').onFilesSelected = (event => {
         const fileUploader = document.getElementById('fileUploader');
-        const files = event.target.files;
-        fileUploader.addFile(files);
-      }
+        const files = Array.from(event.detail.files);
+
+        files.forEach(file => {
+          fileUploader.addFile(file);
+        });
+      });
     </script>
   </body>
 </html>
