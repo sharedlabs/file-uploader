@@ -1,5 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../app-localize-behavior/app-localize-behavior.html">
+<link rel="import" href="../app-localize-mixin/app-localize-mixin.html">
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../offthread-image/offthread-image.html">
 <link rel="import" href="../overlay-container/animated-overlay-mixin.html">
@@ -110,7 +110,7 @@
 
   <script>
 
-    class FileUploaderProgressOverlay extends AnimatedOverlayMixin(Polymer.AppLocalizeBehavior(Polymer.Element)) {
+    class FileUploaderProgressOverlay extends AnimatedOverlayMixin(AppLocalizeMixin(Polymer.Element)) {
       
       static get is() {return 'file-uploader-progress-overlay';}
 

@@ -3,7 +3,7 @@
   "description": "Element for multiple file upload",
   "main": "file-uploader.html",
   "dependencies": {
-    "app-localize-behavior": "git@github.com:sharedlabs/app-localize-behavior.git#^1.0.0",
+    "app-localize-mixin": "git@github.com:sharedlabs/app-localize-mixin.git#^1.0.0",
     "iron-image": "PolymerElements/iron-image#^1.2.5",
     "offthread-image": "git@github.com:sharedlabs/offthread-image.git#^1.0.0",
     "overlay-container": "git@github.com:sharedlabs/overlay-container.git#^1.0.0",
