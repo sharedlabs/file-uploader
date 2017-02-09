@@ -26,4 +26,4 @@ Why xhrParams as a promise? This is handy on enviroments like S3 when you have t
 
 ### Browsers support
 
-Any browser that supports Polymer 1.0
+Any browser that supports Polymer 2.0-preview
