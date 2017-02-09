@@ -14,8 +14,15 @@ It uses the [offthread-image](https://github.com/sharedlabs/offthread-image) ele
 <file-uploader id="fileUploader"><file-uploader>
 
 ...
-this.$.fileUploader.addFile(file, {url, method, headers});
+const xhrParamsPromise = new Promise((resolve, reject) => {
+  ...
+  resolve({url, method, headers});
+});
+
+this.$.fileUploader.addFile(file, xhrParamsPromise);
 ```
+
+Why xhrParams as a promise? This is handy on enviroments like S3 when you have to ask for signed urls before uploading the files. This way that request is also part of the file uploading progress.
 
 ### Browsers support
 
