@@ -28,45 +28,43 @@
 
       static get is() {return 'file-uploader';}
 
-      static get config() {
+      static get properties() {
         return {
-          properties: {
 
-            /**
-            * Files that are currently being uploaded.
-            * It's a Map where keys are files and values are upload details.
-            */
-            uploadingFiles: {
-              type: Map,
-              readOnly: true,
-              value: _ => {
-                return new Map();
-              }
-            },
+          /**
+          * Files that are currently being uploaded.
+          * It's a Map where keys are files and values are upload details.
+          */
+          uploadingFiles: {
+            type: Map,
+            readOnly: true,
+            value: _ => {
+              return new Map();
+            }
+          },
 
-            // @optional
-            url: String,
+          // @optional
+          url: String,
 
-            // @optional
-            method: {
-              type: String,
-              value: 'POST',
-            },
+          // @optional
+          method: {
+            type: String,
+            value: 'POST',
+          },
 
-            // @optional
-            headers: Object,
+          // @optional
+          headers: Object,
 
-            uploading: {
-              type: Boolean,
-              readOnly: true,
-              value: false,
-              notify: true,
-            },
+          uploading: {
+            type: Boolean,
+            readOnly: true,
+            value: false,
+            notify: true,
+          },
 
-            // Current XMLHTTPRequest
-            _currentXHR: Object
+          // Current XMLHTTPRequest
+          _currentXHR: Object
 
-          }
         };
       }
 

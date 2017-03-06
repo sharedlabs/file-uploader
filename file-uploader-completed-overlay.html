@@ -89,43 +89,41 @@
 
       static get is() {return 'file-uploader-completed-overlay';}
 
-      static get config() {
+      static get properties() {
         return {
-          properties: {
 
-            language: {
-              type: String,
-              value: 'en'
-            },
+          language: {
+            type: String,
+            value: 'en'
+          },
 
-            resources: {
-              value: _ => {
-                return {
-                  'en': {
-                    'HeaderTitle': '{length, plural, one {1 item uploaded} other {{length} items uploaded}}'
-                  },
-                  'es': {
-                    'HeaderTitle': 'Se {length, plural, one {ha subido 1 elemento} other {han subido {length} elementos}}'
-                  }
-                };
-              }
-            },
+          resources: {
+            value: _ => {
+              return {
+                'en': {
+                  'HeaderTitle': '{length, plural, one {1 item uploaded} other {{length} items uploaded}}'
+                },
+                'es': {
+                  'HeaderTitle': 'Se {length, plural, one {ha subido 1 elemento} other {han subido {length} elementos}}'
+                }
+              };
+            }
+          },
 
-            // @override AnimatedOverlayBehavior
-            noCancelOnEscKey: {
-              type: Boolean,
-              value: true
-            },
+          // @override AnimatedOverlayBehavior
+          noCancelOnEscKey: {
+            type: Boolean,
+            value: true
+          },
 
-            // @override AnimatedOverlayBehavior
-            noCancelOnPopState: {
-              type: Boolean,
-              value: true
-            },
+          // @override AnimatedOverlayBehavior
+          noCancelOnPopState: {
+            type: Boolean,
+            value: true
+          },
 
-            _files: Array
+          _files: Array
 
-          }
         };
       }
 

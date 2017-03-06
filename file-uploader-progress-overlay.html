@@ -113,58 +113,56 @@
       
       static get is() {return 'file-uploader-progress-overlay';}
 
-      static get config() {
+      static get properties() {
         return {
-          properties: {
 
-            // @override AnimatedOverlayBehavior
-            noCancelOnEscKey: {
-              type: Boolean,
-              value: true
-            },
+          // @override AnimatedOverlayBehavior
+          noCancelOnEscKey: {
+            type: Boolean,
+            value: true
+          },
 
-            // @override AnimatedOverlayBehavior
-            noCancelOnPopState: {
-              type: Boolean,
-              value: true
-            },
+          // @override AnimatedOverlayBehavior
+          noCancelOnPopState: {
+            type: Boolean,
+            value: true
+          },
 
-            uploadingFiles: Map,
+          uploadingFiles: Map,
 
-            // The file that is being currently uploaded.
-            currentFile: Object,
+          // The file that is being currently uploaded.
+          currentFile: Object,
 
-            destinationText: {
-              type: String,
-              value: null
-            },
+          destinationText: {
+            type: String,
+            value: null
+          },
 
-            language: {
-              type: String,
-              value: 'en'
-            },
+          language: {
+            type: String,
+            value: 'en'
+          },
 
-            // localize resources
-            resources: {
-              value: _ => {
-                return {
-                  'en': {
-                    'UploadingTo': 'Uploading to',
-                    'Uploading': 'Uploading...',
-                    'LoadedDetail': '{current} of {total}',
-                    'stop': 'Stop'
-                  },
-                  'es': {
-                    'UploadingTo': 'Subiendo a',
-                    'Uploading': 'Subiendo...',
-                    'LoadedDetail': '{current} de {total}',
-                    'stop': 'Detener'
-                  }
-                };
-              }
+          // localize resources
+          resources: {
+            value: _ => {
+              return {
+                'en': {
+                  'UploadingTo': 'Uploading to',
+                  'Uploading': 'Uploading...',
+                  'LoadedDetail': '{current} of {total}',
+                  'stop': 'Stop'
+                },
+                'es': {
+                  'UploadingTo': 'Subiendo a',
+                  'Uploading': 'Subiendo...',
+                  'LoadedDetail': '{current} de {total}',
+                  'stop': 'Detener'
+                }
+              };
             }
-
           }
+
         };
       }
 
